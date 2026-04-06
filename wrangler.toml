@@ -1,6 +1,11 @@
-name = "cultivation-game"
+name = "cultivation-fiction"
 compatibility_date = "2024-04-06"
 pages_build_output_dir = "out"
 
-[vars]
-NEXT_PUBLIC_API_URL = ""
+[build]
+command = "npm run build"
+
+[build.environment]
+NEXT_TELEMETRY_DISABLED = "1"
+
+compatibility_flags = ["nodejs_compat"]
