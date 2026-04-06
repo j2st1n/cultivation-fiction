@@ -7,16 +7,21 @@ import { streamChat } from '@/app/lib/ai';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
-const DAOHAO_PREFIXES = ['青', '玄', '紫', '赤', '白', '墨', '玉', '寒', '星', '凌', '流云', '惊鸿', '扶摇', '太虚', '天玑', '飞霜'];
-const DAOHAO_CORES = ['云', '霄', '尘', '渊', '河', '岚', '风', '月', '霜', '雷', '竹', '鹤', '剑', '辰', '岳', '川'];
-const DAOHAO_SUFFIXES = ['子', '真人', '道人', '散人', '居士', '上人'];
+const SURNAMES = ['张', '王', '李', '赵', '刘', '陈', '杨', '黄', '周', '吴', '徐', '孙', '马', '朱', '胡', '郭', '林', '何', '高', '梁'];
+const GIVEN_NAMES = ['小', '二', '三', '四', '五', '六', '七', '八', '九', '十', '大', '小', '老'];
+const NOUNS = ['虎', '牛', '龙', '狗', '蛋', '根', '柱', '石', '山', '水', '风', '云', '雷', '川', '海', '林', '财', '福', '禄', '寿', '喜', '旺', '顺', '安', '平', '凡', '实', '厚', '德', '义', '孝', '仁'];
+const PLACEHOLDERS = ['', '子', '儿', '郎', '仔'];
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
 function generateRandomDaohao(): string {
-  return `${pickRandom(DAOHAO_PREFIXES)}${pickRandom(DAOHAO_CORES)}${pickRandom(DAOHAO_SUFFIXES)}`;
+  const surname = pickRandom(SURNAMES);
+  const given = pickRandom(GIVEN_NAMES);
+  const noun = pickRandom(NOUNS);
+  const suffix = pickRandom(PLACEHOLDERS);
+  return `${surname}${given}${noun}${suffix}`;
 }
 
 function Typewriter({ text, onComplete }: { text: string; onComplete?: () => void }) {
@@ -60,17 +65,18 @@ export default function GameInterface() {
     resetGame,
   } = useGameStore();
   
-  const { api } = useSettingsStore();
+  const { api, isValidated } = useSettingsStore();
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
   const [inputText, setInputText] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showSavePanel, setShowSavePanel] = useState(false);
+  const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const isInitialized = player.name && api.endpoint && api.apiKey;
+  const isInitialized = player.name && api.endpoint && api.apiKey && isValidated;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -306,6 +312,13 @@ export default function GameInterface() {
             修仙世界
           </h1>
           <div className="flex items-center gap-4 text-sm">
+            <button 
+              onClick={() => setShowWorldPanel(true)}
+              className="text-slate-400 hover:text-slate-200"
+              title="世界观"
+            >
+              📖
+            </button>
             <span className="text-slate-400">{player.name}</span>
             <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300">
               {player.realm}
@@ -314,7 +327,7 @@ export default function GameInterface() {
             <button 
               onClick={() => setShowSettings(true)}
               className="text-slate-400 hover:text-slate-200"
-              title="设置"
+              title="AI设置"
             >
               ⚙️
             </button>
@@ -338,6 +351,15 @@ export default function GameInterface() {
               window.location.reload();
             }
           }}
+        />
+      )}
+
+      {showWorldPanel && (
+        <WorldPanel 
+          onClose={() => setShowWorldPanel(false)}
+          player={player}
+          world={world}
+          storyProgress={storyProgress}
         />
       )}
 
@@ -422,6 +444,127 @@ export default function GameInterface() {
       {showSavePanel && (
         <SavePanel onClose={() => setShowSavePanel(false)} />
       )}
+    </div>
+  );
+}
+
+const REALMS = [
+  { name: '凡人', desc: '尚未踏入修仙之路的普通人' },
+  { name: '练气期', desc: '引气入体，修炼根基' },
+  { name: '筑基期', desc: '筑就道基，凝聚真元' },
+  { name: '金丹期', desc: '结成金丹，位列真人' },
+  { name: '元婴期', desc: '元婴出窍，神通初现' },
+  { name: '化神期', desc: '化神返虚，寿元悠长' },
+  { name: '炼虚期', desc: '炼虚合道，举手投足皆法则' },
+  { name: '合体期', desc: '身合天地，法则交融' },
+  { name: '大乘期', desc: '渡劫飞升，只差一步' },
+  { name: '渡劫期', desc: '历劫成仙，超脱轮回' },
+];
+
+const FACTIONS = [
+  { name: '青云宗', desc: '正道领袖，主张清心寡欲，以斩妖除魔为己任' },
+  { name: '魔渊宫', desc: '魔道正宗，追求极致的力量，不择手段' },
+  { name: '万宝阁', desc: '商道世家，中立务实，左右逢源' },
+  { name: '散修联盟', desc: '自由修士，无特定立场，独来独往' },
+];
+
+function WorldPanel({ 
+  onClose, 
+  player, 
+  world, 
+  storyProgress 
+}: { 
+  onClose: () => void; 
+  player: any; 
+  world: any; 
+  storyProgress: number; 
+}) {
+  const currentRealm = REALMS.find(r => r.name === player.realm);
+  const realmIndex = REALMS.findIndex(r => r.name === player.realm);
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-slate-200">世界观与进度</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-cyan-400 font-bold mb-2">角色信息</h3>
+          <div className="bg-slate-700/50 rounded-lg p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-400">道号</span>
+              <span className="text-slate-200">{player.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">境界</span>
+              <span className="text-purple-300">{player.realm}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">年龄</span>
+              <span className="text-slate-200">{player.age}岁</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">当前地点</span>
+              <span className="text-slate-200">{world.currentLocation}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">已访问</span>
+              <span className="text-slate-200">{world.visitedLocations.length}处</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">剧情进度</span>
+              <span className="text-slate-200">{storyProgress}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-cyan-400 font-bold mb-2">境界体系</h3>
+          <div className="space-y-2">
+            {REALMS.map((realm, idx) => (
+              <div 
+                key={realm.name}
+                className={`p-3 rounded-lg ${
+                  idx === realmIndex 
+                    ? 'bg-purple-900/50 border border-purple-500' 
+                    : idx < realmIndex 
+                      ? 'bg-slate-700/30 text-slate-500 line-through'
+                      : 'bg-slate-700/30 text-slate-400'
+                }`}
+              >
+                <div className="font-medium">{realm.name}</div>
+                <div className="text-xs text-slate-500">{realm.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-cyan-400 font-bold mb-2">修仙界势力</h3>
+          <div className="space-y-2">
+            {FACTIONS.map(faction => (
+              <div key={faction.name} className="p-3 bg-slate-700/30 rounded-lg">
+                <div className="font-medium text-slate-200">{faction.name}</div>
+                <div className="text-xs text-slate-500">{faction.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-cyan-400 font-bold mb-2">主线任务</h3>
+          <div className="p-4 bg-slate-700/50 rounded-lg">
+            <p className="text-slate-300 text-sm">
+              父亲曾是修士，后失踪。爷爷临终遗愿：找出父亲下落。
+            </p>
+            <p className="text-slate-500 text-xs mt-2">
+              未知父亲下落前，修仙之路永不止步...
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -721,41 +864,51 @@ function toChineseNumber(value: number): string {
 }
 
 function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
-  const { api, updateApi } = useSettingsStore();
+  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  const presets = [
-    { name: 'OpenAI', endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4' },
-  ];
+  const handleValidate = async () => {
+    if (!api.endpoint || !api.apiKey) {
+      setValidationError('请填写 Endpoint 和 API Key');
+      return;
+    }
+    setValidating(true);
+    setValidationError('');
 
-  const applyPreset = (preset: { name: string; endpoint: string; model: string }) => {
-    updateApi({
-      endpoint: preset.endpoint,
-      apiKey: '',
-      model: preset.model,
-    });
+    try {
+      const baseUrl = api.endpoint.split('/v1')[0];
+      const response = await fetch(`${baseUrl}/v1/models`, {
+        headers: { 'Authorization': `Bearer ${api.apiKey}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data?.map((m: { id: string }) => m.id) || [];
+        updateApi({ model: models[0] || api.model });
+        setValidated(true);
+        setValidationError('');
+      } else {
+        setValidationError(`验证失败: ${response.status}`);
+      }
+    } catch {
+      setValidationError('连接失败，请检查 Endpoint');
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleEndpointBlur = () => {
+    if (api.endpoint && api.apiKey) {
+      fetchModels();
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-200">设置</h2>
+          <h2 className="text-xl font-bold text-slate-200">AI 设置</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-slate-400 text-sm mb-2">预设供应商</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {presets.map((preset) => (
-              <button
-                key={preset.name}
-                onClick={() => applyPreset(preset)}
-                className="p-2 text-sm bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-left"
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -765,8 +918,11 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
               type="text"
               value={api.endpoint}
               onChange={(e) => updateApi({ endpoint: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+              onBlur={handleEndpointBlur}
+              placeholder="https://api.openai.com/v1"
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
             />
+            <p className="mt-1 text-xs text-slate-500">填写 API 基础地址，如 https://api.openai.com/v1</p>
           </div>
           <div>
             <label className="block text-slate-400 text-sm mb-1">API Key</label>
@@ -774,7 +930,8 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
               type="password"
               value={api.apiKey}
               onChange={(e) => updateApi({ apiKey: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+              placeholder="sk-..."
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
             />
             <p className="mt-1 text-xs text-amber-400">
               ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
@@ -782,13 +939,42 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
           </div>
           <div>
             <label className="block text-slate-400 text-sm mb-1">模型</label>
-            <input
-              type="text"
-              value={api.model}
-              onChange={(e) => updateApi({ model: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
-            />
+            {availableModels.length > 0 ? (
+              <select
+                value={api.model}
+                onChange={(e) => updateApi({ model: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+              >
+                {availableModels.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={api.model}
+                onChange={(e) => updateApi({ model: e.target.value })}
+                placeholder="gpt-4"
+                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+              />
+            )}
           </div>
+
+          {validationError && (
+            <p className="text-sm text-red-400">{validationError}</p>
+          )}
+
+          <button
+            onClick={handleValidate}
+            disabled={validating || !api.endpoint || !api.apiKey}
+            className={`w-full py-2 rounded-lg font-medium transition-all ${
+              isValidated 
+                ? 'bg-green-600 text-white' 
+                : 'bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50'
+            }`}
+          >
+            {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
+          </button>
         </div>
 
         <button
@@ -804,14 +990,50 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
 function SetupScreen() {
   const { updatePlayer } = useGameStore();
-  const { api, updateApi } = useSettingsStore();
+  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
   const [step, setStep] = useState<'name' | 'api'>('name');
   const [name, setName] = useState(generateRandomDaohao);
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const handleNameSubmit = () => {
     if (name.trim()) {
       updatePlayer({ name });
       setStep('api');
+    }
+  };
+
+  const handleValidate = async () => {
+    if (!api.endpoint || !api.apiKey) {
+      setValidationError('请填写 Endpoint 和 API Key');
+      return;
+    }
+    setValidating(true);
+    setValidationError('');
+
+    try {
+      const baseUrl = api.endpoint.split('/v1')[0];
+      const response = await fetch(`${baseUrl}/v1/models`, {
+        headers: { 'Authorization': `Bearer ${api.apiKey}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data?.map((m: { id: string }) => m.id) || [];
+        updateApi({ model: models[0] || api.model });
+        setValidated(true);
+      } else {
+        setValidationError(`验证失败: ${response.status}`);
+      }
+    } catch {
+      setValidationError('连接失败，请检查 Endpoint');
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleEndpointBlur = () => {
+    if (api.endpoint && api.apiKey) {
+      fetchModels();
     }
   };
 
@@ -855,41 +1077,73 @@ function SetupScreen() {
             <div className="space-y-4">
               <div>
                 <label className="block text-slate-400 text-sm mb-1">API Endpoint</label>
-              <input
-                type="text"
-                value={api.endpoint}
-                onChange={(e) => updateApi({ endpoint: e.target.value })}
-                placeholder="https://api.openai.com/v1/chat/completions"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
-              />
+                <input
+                  type="text"
+                  value={api.endpoint}
+                  onChange={(e) => updateApi({ endpoint: e.target.value })}
+                  onBlur={handleEndpointBlur}
+                  placeholder="https://api.openai.com/v1"
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                />
+                <p className="mt-1 text-xs text-slate-500">填写 API 基础地址，如 https://api.openai.com/v1</p>
               </div>
               <div>
                 <label className="block text-slate-400 text-sm mb-1">API Key</label>
-              <input
-                type="password"
-                value={api.apiKey}
-                onChange={(e) => updateApi({ apiKey: e.target.value })}
-                placeholder="sk-..."
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
-              />
-              <p className="mt-1 text-xs text-amber-400">
-                ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
-              </p>
+                <input
+                  type="password"
+                  value={api.apiKey}
+                  onChange={(e) => updateApi({ apiKey: e.target.value })}
+                  placeholder="sk-..."
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                />
+                <p className="mt-1 text-xs text-amber-400">
+                  ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+                </p>
               </div>
               <div>
                 <label className="block text-slate-400 text-sm mb-1">模型</label>
-                <input
-                  type="text"
-                  value={api.model}
-                  onChange={(e) => updateApi({ model: e.target.value })}
-                  placeholder="gpt-4"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
-                />
+                {availableModels.length > 0 ? (
+                  <select
+                    value={api.model}
+                    onChange={(e) => updateApi({ model: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                  >
+                    {availableModels.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={api.model}
+                    onChange={(e) => updateApi({ model: e.target.value })}
+                    placeholder="gpt-4"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                  />
+                )}
               </div>
             </div>
+
+            {validationError && (
+              <p className="mt-3 text-sm text-red-400">{validationError}</p>
+            )}
+
+            <button
+              onClick={handleValidate}
+              disabled={validating || !api.endpoint || !api.apiKey}
+              className={`mt-4 w-full py-3 rounded-lg font-medium transition-all ${
+                isValidated 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50'
+              }`}
+            >
+              {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
+            </button>
+
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all font-medium text-white"
+              disabled={!isValidated}
+              className="mt-3 w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-white"
             >
               进入游戏
             </button>
