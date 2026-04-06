@@ -57,6 +57,50 @@ docker compose down
 
 说明：这里提供的是静态站点预览，不是 `next start` 形式的 Next.js 服务。
 
+## 方式三：Cloudflare Pages
+
+适合当前静态导出版本。
+
+Cloudflare Pages 配置：
+
+- Build command: `npm run build`
+- Output directory: `out`
+
+建议流程：
+
+1. 打开 Cloudflare Dashboard
+2. 进入 **Workers & Pages**
+3. 新建 **Pages** 项目
+4. 连接 GitHub 仓库 `cultivation-fiction`
+5. 填入上面的构建配置并部署
+
+注意：
+
+- 当前项目走的是静态导出路径，不需要 `next start`
+- 不要切到 Worker / SSR 部署模式
+- AI 配置仍然在浏览器本地保存，不依赖 Cloudflare 环境变量
+
+## 方式三：Cloudflare Pages（静态导出路径）
+
+适合将静态导出产物直接托管在 Cloudflare Pages 上，避免服务端渲染（SSR）与 Workers 的复杂性。
+
+前提：项目通过 Next.js 静态导出产物输出到 out/ 目录（已在本仓库的 DEPLOY 说明中实现）。
+
+1) 构建产物
+- 运行：`npm install`，然后执行 `npm run build && npm run export`，产物将放置于 `out/` 目录。
+- 如果你在本地或 CI 端想要一次性完成，请确保 `package.json` 已包含 `export` 脚本（见下方变更建议）。
+
+2) Cloudflare Pages 配置
+- Build command（构建命令）：`npm ci && npm run build && npm run export`
+- Build output directory（输出目录）：`out`
+- 流程说明：Pages 将直接托管 `out/` 目录中的静态文件，无需部署服务端。
+- 注意：若站点使用了动态路由或需要客户端路由保护，请确保全部页面为静态导出页面，静态资源可在 `out/` 中访问。
+
+3) 兼容性与注意事项
+- 该方案明确不涉及旧的 API 令牌工作流、Worker 框架或其他 SSR 模式。
+- 只要页面是静态导出产物，Cloudflare Pages 的静态托管即可工作。
+- AI 配置、模型端点等配置仍保存在浏览器本地存储中，且不上传至部署端。
+
 ## AI API 配置
 
 应用内置设置面板，支持：
