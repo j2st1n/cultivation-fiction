@@ -932,25 +932,34 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
           </div>
           <div>
             <label className="block text-slate-400 text-sm mb-1">模型</label>
-            {availableModels.length > 0 ? (
-              <select
-                value={api.model}
-                onChange={(e) => updateApi({ model: e.target.value })}
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+            <div className="flex gap-2">
+              {availableModels.length > 0 ? (
+                <select
+                  value={api.model}
+                  onChange={(e) => updateApi({ model: e.target.value })}
+                  className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                >
+                  {availableModels.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={api.model}
+                  onChange={(e) => updateApi({ model: e.target.value })}
+                  placeholder="gpt-4"
+                  className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                />
+              )}
+              <button
+                onClick={fetchModels}
+                disabled={!api.endpoint || !api.apiKey}
+                className="px-3 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm text-slate-300 disabled:opacity-50"
               >
-                {availableModels.map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={api.model}
-                onChange={(e) => updateApi({ model: e.target.value })}
-                placeholder="gpt-4"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
-              />
-            )}
+                获取模型
+              </button>
+            </div>
           </div>
 
           {validationError && (
@@ -1095,25 +1104,34 @@ function SetupScreen() {
               </div>
               <div>
                 <label className="block text-slate-400 text-sm mb-1">模型</label>
-                {availableModels.length > 0 ? (
-                  <select
-                    value={api.model}
-                    onChange={(e) => updateApi({ model: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                <div className="flex gap-2">
+                  {availableModels.length > 0 ? (
+                    <select
+                      value={api.model}
+                      onChange={(e) => updateApi({ model: e.target.value })}
+                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                    >
+                      {availableModels.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={api.model}
+                      onChange={(e) => updateApi({ model: e.target.value })}
+                      placeholder="gpt-4"
+                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                    />
+                  )}
+                  <button
+                    onClick={fetchModels}
+                    disabled={!api.endpoint || !api.apiKey}
+                    className="px-3 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm text-slate-300 disabled:opacity-50"
                   >
-                    {availableModels.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={api.model}
-                    onChange={(e) => updateApi({ model: e.target.value })}
-                    placeholder="gpt-4"
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
-                  />
-                )}
+                    获取模型
+                  </button>
+                </div>
               </div>
             </div>
 
