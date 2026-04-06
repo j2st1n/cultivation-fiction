@@ -68,6 +68,7 @@ export const useSettingsStore = create<SettingsStore>()(
           maxTokens: state.api.maxTokens,
         },
         availableModels: state.availableModels,
+        isValidated: state.isValidated,
       }),
     }
   )

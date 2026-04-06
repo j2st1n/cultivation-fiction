@@ -307,10 +307,10 @@ export default function GameInterface() {
           <div className="flex items-center gap-4 text-sm">
             <button 
               onClick={() => setShowWorldPanel(true)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-slate-400 hover:text-slate-200 text-sm px-2"
               title="世界观"
             >
-              📖
+              世界观
             </button>
             <span className="text-slate-400">{player.name}</span>
             <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300">
