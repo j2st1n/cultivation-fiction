@@ -18,7 +18,6 @@ export interface PlayerAttributes {
   age: number;
   spirit: number;      // 灵根资质 1-100
   fortune: number;     // 气运 1-100
-  karma: number;       // 善恶值 -100到100
   strength: number;    // 力量
   intelligence: number;// 悟性
   constitution: number;// 体质

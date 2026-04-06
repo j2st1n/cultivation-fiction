@@ -30,7 +30,6 @@ const INITIAL_PLAYER: PlayerAttributes = {
   age: 16,
   spirit: 50,
   fortune: 50,
-  karma: 0,
   strength: 10,
   intelligence: 10,
   constitution: 10,

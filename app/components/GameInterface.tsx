@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
 const DAOHAO_PREFIXES = ['青', '玄', '紫', '赤', '白', '墨', '玉', '寒', '星', '凌', '流云', '惊鸿', '扶摇', '太虚', '天玑', '飞霜'];
@@ -56,6 +56,7 @@ export default function GameInterface() {
     isGenerating,
     storyProgress,
     updatePlayer,
+    advanceRealm,
     resetGame,
   } = useGameStore();
   
@@ -84,7 +85,7 @@ export default function GameInterface() {
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
       role: 'user',
-      content: `开始修仙之旅。玩家${player.name}，境界${player.realm}，地点${world.currentLocation}，善恶值${player.karma}。请以这段文字开头继续叙事：\n\n${INITIAL_STORY}`,
+      content: `开始修仙之旅。玩家${player.name}，境界${player.realm}，地点${world.currentLocation}。请以这段文字开头继续叙事：\n\n${INITIAL_STORY}`,
       timestamp: Date.now(),
     };
     
@@ -100,6 +101,10 @@ export default function GameInterface() {
         fullResponse += chunk;
       },
       onComplete: (text) => {
+        const newRealm = detectRealmUpgrade(text);
+        if (newRealm) {
+          advanceRealm(newRealm as any);
+        }
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -116,7 +121,7 @@ export default function GameInterface() {
         setGenerating(false);
       },
     });
-  }, [player.name, world.currentLocation, player.realm, player.karma, addMessage, setGenerating]);
+  }, [player.name, world.currentLocation, player.realm, addMessage, setGenerating]);
 
   useEffect(() => {
     if (player.name && !messages.length && !isGenerating) {
@@ -141,7 +146,6 @@ export default function GameInterface() {
       player.name,
       player.realm,
       world.currentLocation,
-      player.karma,
       storyProgress
     );
     
@@ -161,6 +165,10 @@ export default function GameInterface() {
         fullResponse += chunk;
       },
       onComplete: (text) => {
+        const newRealm = detectRealmUpgrade(text);
+        if (newRealm) {
+          advanceRealm(newRealm as any);
+        }
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -191,7 +199,6 @@ export default function GameInterface() {
       player.name,
       player.realm,
       world.currentLocation,
-      player.karma,
       storyProgress
     );
     
@@ -205,6 +212,10 @@ export default function GameInterface() {
     await streamChat([systemMessage, ...messages], {
       onChunk: (chunk) => setCurrentText(prev => prev + chunk),
       onComplete: (text) => {
+        const newRealm = detectRealmUpgrade(text);
+        if (newRealm) {
+          advanceRealm(newRealm as any);
+        }
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -244,7 +255,6 @@ export default function GameInterface() {
       player.name,
       player.realm,
       world.currentLocation,
-      player.karma,
       storyProgress
     );
     
@@ -262,6 +272,10 @@ export default function GameInterface() {
         setCurrentText(prev => prev + chunk);
       },
       onComplete: (text) => {
+        const newRealm = detectRealmUpgrade(text);
+        if (newRealm) {
+          advanceRealm(newRealm as any);
+        }
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -296,7 +310,7 @@ export default function GameInterface() {
             <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300">
               {player.realm}
             </span>
-            <span className="text-slate-500" title="善恶值影响剧情走向">善恶: {player.karma}</span>
+            <span className="text-slate-500" title="年龄">年龄: {player.age}</span>
             <button 
               onClick={() => setShowSettings(true)}
               className="text-slate-400 hover:text-slate-200"

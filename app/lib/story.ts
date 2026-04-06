@@ -58,21 +58,18 @@ export function buildContextMessage(
   playerName: string,
   playerRealm: string,
   location: string,
-  karma: number,
   storyProgress: number
 ): string {
   return `玩家信息：
 - 姓名：${playerName || '未命名'}
 - 境界：${playerRealm}
 - 当前地点：${location}
-- 善恶值：${karma} (${karma > 0 ? '偏向善良' : karma < 0 ? '偏向邪恶' : '中立'})
 - 故事进度：${storyProgress}
 
 请继续叙事，确保：
 1. 根据玩家选择的选项推进剧情
-2. 根据玩家善恶值安排遭遇的人物和事件
-3. 境界提升要有明确的修炼过程和考验
-4. 保持修仙世界的韵味和氛围`;
+2. 境界提升要有明确的修炼过程和考验
+3. 保持修仙世界的韵味和氛围`;
 }
 
 export function parseChoicesFromResponse(text: string): string[] {
@@ -91,4 +88,22 @@ export function parseChoicesFromResponse(text: string): string[] {
 
 export function checkRequiresInput(text: string): boolean {
   return text.includes('【自由输入】') || text.includes('请描述你的行动');
+}
+
+export function detectRealmUpgrade(text: string): string | null {
+  const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期'];
+  
+  for (let i = 0; i < realmOrder.length; i++) {
+    const realm = realmOrder[i];
+    if (text.includes(`突破到${realm}`) || 
+        text.includes(`晋升${realm}`) || 
+        text.includes(`进阶${realm}`) ||
+        text.includes(`达到${realm}`) ||
+        text.includes(`迈入${realm}`) ||
+        new RegExp(`晋级.*${realm}`).test(text) ||
+        new RegExp(`突破.*${realm}`).test(text)) {
+      return realm;
+    }
+  }
+  return null;
 }
