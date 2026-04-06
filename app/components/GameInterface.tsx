@@ -69,7 +69,7 @@ export default function GameInterface() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const isInitialized = player.name && api.endpoint && api.apiKey && isValidated;
+  const isInitialized = player.name && api.endpoint && isValidated;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1023,7 +1023,7 @@ function SetupScreen() {
     );
   }
 
-  if (isValidated && api.endpoint && api.apiKey && player.name) {
+  if (isValidated && api.endpoint && player.name) {
     return <GameInterface />;
   }
 
