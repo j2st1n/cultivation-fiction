@@ -32,6 +32,16 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'api-settings-storage',
+      partialize: (state) => ({
+        // 只持久化非敏感配置，不保存 apiKey
+        api: {
+          endpoint: state.api.endpoint,
+          model: state.api.model,
+          temperature: state.api.temperature,
+          maxTokens: state.api.maxTokens,
+          // 排除 apiKey，不持久化到 localStorage
+        },
+      }),
     }
   )
 );

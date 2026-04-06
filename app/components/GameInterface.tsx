@@ -710,9 +710,6 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
   const { api, updateApi } = useSettingsStore();
 
   const presets = [
-    { name: 'DeepSeek', endpoint: 'https://wzw.pp.ua/v1/chat/completions', model: 'deepseek-v3.2' },
-    { name: 'DeepSeek (rosmontis)', endpoint: 'https://ai.rosmontis.de/v1/chat/completions', model: 'deepseek-v3.2' },
-    { name: 'DeepSeek (nih)', endpoint: 'https://api.nih.cc/v1/chat/completions', model: 'deepseek-ai/deepseek-v3.2' },
     { name: 'OpenAI', endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4' },
   ];
 
@@ -765,6 +762,9 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
               onChange={(e) => updateApi({ apiKey: e.target.value })}
               className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
             />
+            <p className="mt-1 text-xs text-amber-400">
+              ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+            </p>
           </div>
           <div>
             <label className="block text-slate-400 text-sm mb-1">模型</label>
@@ -858,6 +858,9 @@ function SetupScreen() {
                 placeholder="sk-..."
                 className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
               />
+              <p className="mt-1 text-xs text-amber-400">
+                ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+              </p>
               </div>
               <div>
                 <label className="block text-slate-400 text-sm mb-1">模型</label>
