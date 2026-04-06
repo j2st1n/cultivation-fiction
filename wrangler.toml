@@ -1,5 +1,0 @@
-name = "cultivation-fiction"
-compatibility_date = "2024-04-06"
-
-[site]
-bucket = "./out"
