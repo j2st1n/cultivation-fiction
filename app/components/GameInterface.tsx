@@ -396,7 +396,7 @@ export default function GameInterface() {
           </div>
         )}
 
-        {!errorMsg && choices.length > 0 && !isGenerating && (
+        {choices.length > 0 && !isGenerating && (
           <div className="space-y-2 mb-4">
             {choices.map((choice, index) => (
               <button
@@ -420,7 +420,7 @@ export default function GameInterface() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleFreeInput()}
-              placeholder="自由行动或自定义输入..."
+              placeholder={requiresInput ? "请描述你的行动..." : "自由行动或自定义输入..."}
               className="flex-1 px-4 py-3 bg-slate-700 border-2 border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
             />
             <button
