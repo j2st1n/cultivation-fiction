@@ -401,29 +401,36 @@ export default function GameInterface() {
 }
 
 function SavePanel({ onClose }: { onClose: () => void }) {
-  const { saveSlots, addSaveSlot, removeSaveSlot, saveGame, messages, player, world } = useGameStore();
+  const { saveSlots, addSaveSlot, removeSaveSlot, saveGame, loadGame } = useGameStore();
   const [saveName, setSaveName] = useState('');
   const [exportType, setExportType] = useState<'txt' | 'json'>('txt');
+  const [importError, setImportError] = useState('');
 
   const handleSave = () => {
     if (!saveName.trim()) return;
     const saveData = saveGame(saveName);
     addSaveSlot(saveData);
     setSaveName('');
+    setImportError('');
   };
 
   const exportAsTxt = (slotId: string) => {
     const slot = saveSlots.find(s => s.id === slotId);
     if (!slot) return;
-    
-    const storyMessages = messages.filter(m => m.role === 'assistant');
+
+    const { player, world, messages } = slot.gameState;
+    const storyMessages = messages
+      .filter((message) => message.role === 'assistant')
+      .map((message) => sanitizeNovelContent(message.content))
+      .filter((message) => message.length > 0);
+
     let content = `《修仙世界》\n`;
     content += `角色：${player.name} | 境界：${player.realm} | 地点：${world.currentLocation}\n`;
     content += `存档：${slot.name} | ${new Date(slot.createdAt).toLocaleString('zh-CN')}\n`;
     content += `${'='.repeat(40)}\n\n`;
-    
-    storyMessages.forEach((msg, i) => {
-      content += msg.content + '\n\n';
+
+    buildChapterSections(storyMessages).forEach((chapter) => {
+      content += `${chapter.title}\n\n${chapter.content}\n\n`;
     });
     
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -438,19 +445,23 @@ function SavePanel({ onClose }: { onClose: () => void }) {
   const exportAsJson = (slotId: string) => {
     const slot = saveSlots.find(s => s.id === slotId);
     if (!slot) return;
-    
+
     const data = {
       meta: {
         name: slot.name,
         createdAt: slot.createdAt,
-        player: player.name,
-        realm: player.realm,
-        location: world.currentLocation,
+        player: slot.gameState.player.name,
+        realm: slot.gameState.player.realm,
+        location: slot.gameState.world.currentLocation,
       },
       exportType: 'json',
       version: '1.0',
-      messages: messages,
-      world: world,
+      saveData: {
+        id: slot.id,
+        name: slot.name,
+        createdAt: slot.createdAt,
+        gameState: slot.gameState,
+      },
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -460,6 +471,25 @@ function SavePanel({ onClose }: { onClose: () => void }) {
     a.download = `save_${slot.name}_${new Date(slot.createdAt).toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const rawData = JSON.parse(text) as ImportedSaveFile;
+      const importedSave = normalizeImportedSave(rawData);
+
+      loadGame(importedSave);
+      addSaveSlot(importedSave);
+      setImportError('');
+      setSaveName(importedSave.name);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : '导入失败，请检查存档文件格式');
+    }
   };
 
   return (
@@ -484,6 +514,23 @@ function SavePanel({ onClose }: { onClose: () => void }) {
           >
             保存
           </button>
+        </div>
+
+        <div className="mb-4">
+          <label className="inline-flex items-center px-4 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 text-white text-sm cursor-pointer">
+            导入存档(.json)
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </label>
+          {importError ? (
+            <p className="mt-2 text-sm text-red-400">{importError}</p>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">支持导入从本游戏导出的 JSON 存档文件</p>
+          )}
         </div>
 
         <div className="flex gap-4 mb-4 text-sm">
@@ -540,6 +587,111 @@ function SavePanel({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
+}
+
+function sanitizeNovelContent(content: string): string {
+  return content
+    .replace(/\n?【选项】[\s\S]*?(?=\n?【自由输入】|$)/g, '')
+    .replace(/\n?【自由输入】.*$/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+type ImportedSaveFile = {
+  saveData?: unknown;
+};
+
+function normalizeImportedSave(rawData: unknown): import('@/app/types/game').SaveData {
+  const candidate = extractSaveData(rawData);
+
+  if (!candidate || typeof candidate !== 'object') {
+    throw new Error('无效存档：缺少存档数据');
+  }
+
+  const saveData = candidate as Partial<import('@/app/types/game').SaveData>;
+  const gameState = saveData.gameState;
+
+  if (!saveData.name || !gameState) {
+    throw new Error('无效存档：缺少必要字段');
+  }
+
+  if (!Array.isArray(gameState.messages) || !gameState.player || !gameState.world) {
+    throw new Error('无效存档：游戏进度数据不完整');
+  }
+
+  return {
+    id: typeof saveData.id === 'string' ? saveData.id : `import_${Date.now()}`,
+    name: saveData.name,
+    createdAt: typeof saveData.createdAt === 'number' ? saveData.createdAt : Date.now(),
+    gameState,
+  };
+}
+
+function extractSaveData(rawData: unknown): unknown {
+  if (!rawData || typeof rawData !== 'object') {
+    return null;
+  }
+
+  const data = rawData as ImportedSaveFile & Record<string, unknown>;
+  if (data.saveData) {
+    return data.saveData;
+  }
+
+  return data;
+}
+
+function buildChapterSections(storyMessages: string[]): Array<{ title: string; content: string }> {
+  const chapters: Array<{ title: string; content: string }> = [];
+  const paragraphs: string[] = [];
+
+  storyMessages.forEach((message) => {
+    paragraphs.push(...message.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean));
+  });
+
+  let chapterNumber = 1;
+  let currentParagraphs: string[] = [];
+
+  paragraphs.forEach((paragraph, index) => {
+    currentParagraphs.push(paragraph);
+    const paragraphCount = currentParagraphs.length;
+    const isLongEnough = paragraphCount >= 4;
+    const isSceneBoundary = /[。！？]$/.test(paragraph) && paragraph.length >= 40;
+    const isLastParagraph = index === paragraphs.length - 1;
+
+    if ((isLongEnough && isSceneBoundary) || paragraphCount >= 6 || isLastParagraph) {
+      chapters.push({
+        title: `第${toChineseNumber(chapterNumber)}章`,
+        content: currentParagraphs.join('\n\n'),
+      });
+      chapterNumber += 1;
+      currentParagraphs = [];
+    }
+  });
+
+  return chapters.length > 0
+    ? chapters
+    : [{ title: '第一章', content: storyMessages.join('\n\n') }];
+}
+
+function toChineseNumber(value: number): string {
+  const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+  if (value <= 10) {
+    if (value === 10) return '十';
+    return digits[value];
+  }
+
+  if (value < 20) {
+    return `十${digits[value % 10]}`;
+  }
+
+  if (value < 100) {
+    const tens = Math.floor(value / 10);
+    const ones = value % 10;
+    return `${digits[tens]}十${ones === 0 ? '' : digits[ones]}`;
+  }
+
+  return String(value);
 }
 
 function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {

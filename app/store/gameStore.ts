@@ -15,6 +15,7 @@ interface SaveSlot {
   name: string;
   createdAt: number;
   preview: string;
+  gameState: GameState;
 }
 
 interface GameStore extends GameState {
@@ -172,6 +173,7 @@ export const useGameStore = create<GameStore>()(
             name: saveData.name,
             createdAt: saveData.createdAt,
             preview: state.messages[state.messages.length - 1]?.content?.slice(0, 50) || '',
+            gameState: saveData.gameState,
           },
           ...state.saveSlots.slice(0, 9),
         ]
