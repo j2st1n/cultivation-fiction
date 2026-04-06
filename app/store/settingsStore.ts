@@ -22,7 +22,7 @@ interface SettingsStore {
 const DEFAULT_API: ApiSettings = {
   endpoint: '',
   apiKey: '',
-  model: 'gpt-4',
+  model: '',
   temperature: 0.8,
   maxTokens: 2000,
 };

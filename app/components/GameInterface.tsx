@@ -948,7 +948,7 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                   type="text"
                   value={api.model}
                   onChange={(e) => updateApi({ model: e.target.value })}
-                  placeholder="gpt-4"
+                  placeholder="选择或输入模型"
                   className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
                 />
               )}
@@ -1120,7 +1120,7 @@ function SetupScreen() {
                       type="text"
                       value={api.model}
                       onChange={(e) => updateApi({ model: e.target.value })}
-                      placeholder="gpt-4"
+                      placeholder="选择或输入模型"
                       className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
                     />
                   )}
