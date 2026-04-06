@@ -387,12 +387,22 @@ export default function GameInterface() {
         {errorMsg && (
           <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg">
             <p className="text-red-300 mb-2">{errorMsg}</p>
-            <button
-              onClick={handleChoiceRetry}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg transition-all text-white"
-            >
-              重试
-            </button>
+            <div className="flex gap-2">
+              {errorMsg.includes('API设置') && (
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-all text-white"
+                >
+                  重新配置
+                </button>
+              )}
+              <button
+                onClick={handleChoiceRetry}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg transition-all text-white"
+              >
+                重试
+              </button>
+            </div>
           </div>
         )}
 
@@ -997,13 +1007,21 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 }
 
 function SetupScreen() {
-  const { updatePlayer } = useGameStore();
+  const { player, updatePlayer } = useGameStore();
   const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
-  const [step, setStep] = useState<'name' | 'api'>('name');
+  const [step, setStep] = useState<'name' | 'api' | 'loading'>('loading');
   const [name, setName] = useState(generateRandomDaohao);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
+
+  useEffect(() => {
+    if (isValidated && api.endpoint && player.name) {
+      window.location.reload();
+    } else {
+      setStep(player.name ? 'api' : 'name');
+    }
+  }, []);
 
   const handleNameSubmit = () => {
     if (name.trim()) {
@@ -1057,7 +1075,11 @@ function SetupScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {step === 'name' ? (
+        {step === 'loading' ? (
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
+            <div className="animate-pulse text-cyan-400">加载中...</div>
+          </div>
+        ) : step === 'name' ? (
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
             <h1 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6">
               修仙世界
