@@ -67,16 +67,27 @@ export default function GameInterface() {
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const isInitialized = player.name && api.endpoint && api.apiKey && isValidated;
+  useEffect(() => {
+    const checkHydration = setInterval(() => {
+      if (useSettingsStore.persist.hasHydrated()) {
+        setHydrated(true);
+        clearInterval(checkHydration);
+      }
+    }, 100);
+    return () => clearInterval(checkHydration);
+  }, []);
+
+  const isInitialized = hydrated && player.name && api.endpoint && api.apiKey && isValidated;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const startGame = useCallback(async () => {
-    if (!player.name) return;
+    if (!player.name || !api.endpoint || !api.apiKey) return;
     
     setGenerating(true);
     setCurrentText('');
@@ -123,10 +134,10 @@ export default function GameInterface() {
   }, [player.name, world.currentLocation, player.realm, addMessage, setGenerating]);
 
   useEffect(() => {
-    if (player.name && !messages.length && !isGenerating) {
+    if (hydrated && player.name && !messages.length && !isGenerating) {
       startGame();
     }
-  }, [startGame, player.name, messages.length, isGenerating]);
+  }, [startGame, hydrated, player.name, messages.length, isGenerating]);
 
   const handleChoice = async (choiceText: string) => {
     const userMessage: Message = {
@@ -1010,18 +1021,30 @@ function SetupScreen() {
   const { player, updatePlayer } = useGameStore();
   const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
   const [step, setStep] = useState<'name' | 'api' | 'loading'>('loading');
+  const [hydrated, setHydrated] = useState(false);
   const [name, setName] = useState(generateRandomDaohao);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
+    const checkHydration = setInterval(() => {
+      if (useSettingsStore.persist.hasHydrated()) {
+        setHydrated(true);
+        clearInterval(checkHydration);
+      }
+    }, 100);
+    return () => clearInterval(checkHydration);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (isValidated && api.endpoint && player.name) {
       window.location.reload();
     } else {
       setStep(player.name ? 'api' : 'name');
     }
-  }, []);
+  }, [hydrated, isValidated, api.endpoint, player.name]);
 
   const handleNameSubmit = () => {
     if (name.trim()) {
