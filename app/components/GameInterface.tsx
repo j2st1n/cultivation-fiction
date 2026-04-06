@@ -67,27 +67,16 @@ export default function GameInterface() {
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const checkHydration = setInterval(() => {
-      if (useSettingsStore.persist.hasHydrated()) {
-        setHydrated(true);
-        clearInterval(checkHydration);
-      }
-    }, 100);
-    return () => clearInterval(checkHydration);
-  }, []);
-
-  const isInitialized = hydrated && player.name && api.endpoint && api.apiKey && isValidated;
+  const isInitialized = player.name && api.endpoint && api.apiKey && isValidated;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const startGame = useCallback(async () => {
-    if (!player.name || !api.endpoint || !api.apiKey) return;
+    if (!player.name || !isInitialized) return;
     
     setGenerating(true);
     setCurrentText('');
@@ -134,10 +123,10 @@ export default function GameInterface() {
   }, [player.name, world.currentLocation, player.realm, addMessage, setGenerating]);
 
   useEffect(() => {
-    if (hydrated && player.name && !messages.length && !isGenerating) {
+    if (isInitialized && player.name && !messages.length && !isGenerating) {
       startGame();
     }
-  }, [startGame, hydrated, player.name, messages.length, isGenerating]);
+  }, [startGame, isInitialized, player.name, messages.length, isGenerating]);
 
   const handleChoice = async (choiceText: string) => {
     const userMessage: Message = {
@@ -1020,31 +1009,11 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 function SetupScreen() {
   const { player, updatePlayer } = useGameStore();
   const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
-  const [step, setStep] = useState<'name' | 'api' | 'loading'>('loading');
-  const [hydrated, setHydrated] = useState(false);
+  const [step, setStep] = useState<'name' | 'api'>(player.name ? 'api' : 'name');
   const [name, setName] = useState(generateRandomDaohao);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
-
-  useEffect(() => {
-    const checkHydration = setInterval(() => {
-      if (useSettingsStore.persist.hasHydrated()) {
-        setHydrated(true);
-        clearInterval(checkHydration);
-      }
-    }, 100);
-    return () => clearInterval(checkHydration);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (isValidated && api.endpoint && player.name) {
-      window.location.reload();
-    } else {
-      setStep(player.name ? 'api' : 'name');
-    }
-  }, [hydrated, isValidated, api.endpoint, player.name]);
 
   const handleNameSubmit = () => {
     if (name.trim()) {
@@ -1098,11 +1067,7 @@ function SetupScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {step === 'loading' ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-            <div className="animate-pulse text-cyan-400">加载中...</div>
-          </div>
-        ) : step === 'name' ? (
+        {step === 'name' ? (
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
             <h1 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6">
               修仙世界
