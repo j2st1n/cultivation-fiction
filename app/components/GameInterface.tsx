@@ -84,7 +84,7 @@ export default function GameInterface() {
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
       role: 'user',
-      content: `开始修仙之旅。玩家${player.name}，境界${player.realm}，地点${world.currentLocation}。请以这段文字开头继续叙事：\n\n${INITIAL_STORY}`,
+      content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${world.currentLocation}。请以这段文字开头继续叙事：\n\n${INITIAL_STORY}`,
       timestamp: Date.now(),
     };
     
@@ -489,6 +489,10 @@ function WorldPanel({
             <div className="flex justify-between">
               <span className="text-slate-400">道号</span>
               <span className="text-slate-200">{player.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">性别</span>
+              <span className="text-slate-200">{player.gender}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">境界</span>
@@ -995,14 +999,21 @@ function SetupScreen() {
   const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
   const [step, setStep] = useState<'name' | 'api'>('name');
   const [name, setName] = useState(generateRandomDaohao);
+  const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
 
   const handleNameSubmit = () => {
     if (name.trim()) {
-      updatePlayer({ name });
+      updatePlayer({ name, gender });
       setStep('api');
     }
+  };
+
+  const handleRandomName = () => {
+    const newGender = Math.random() > 0.5 ? '男' : '女';
+    setGender(newGender);
+    setName(generateRandomDaohao());
   };
 
   const handleValidate = async () => {
@@ -1050,6 +1061,30 @@ function SetupScreen() {
             <p className="text-slate-400 text-center mb-8">
               踏入修仙之路，书写属于你的传奇
             </p>
+            <div className="flex justify-center gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setGender('男')}
+                className={`px-4 py-2 rounded-lg border ${
+                  gender === '男' 
+                    ? 'bg-cyan-600 border-cyan-500 text-white' 
+                    : 'bg-slate-700 border-slate-600 text-slate-400'
+                }`}
+              >
+                男
+              </button>
+              <button
+                type="button"
+                onClick={() => setGender('女')}
+                className={`px-4 py-2 rounded-lg border ${
+                  gender === '女' 
+                    ? 'bg-purple-600 border-purple-500 text-white' 
+                    : 'bg-slate-700 border-slate-600 text-slate-400'
+                }`}
+              >
+                女
+              </button>
+            </div>
             <input
               type="text"
               value={name}
@@ -1060,10 +1095,10 @@ function SetupScreen() {
               autoFocus
             />
             <button
-              onClick={() => setName(generateRandomDaohao())}
+              onClick={handleRandomName}
               className="w-full py-2 mb-4 bg-slate-700 border border-slate-500 rounded-lg hover:border-cyan-500 hover:text-cyan-300 transition-all text-slate-200"
             >
-              随机生成道号
+              随机性别和道号
             </button>
             <button
               onClick={handleNameSubmit}

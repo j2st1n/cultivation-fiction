@@ -12,8 +12,11 @@ export type CultivationRealm =
   | '大乘期'
   | '渡劫期';
 
+export type Gender = '男' | '女';
+
 export interface PlayerAttributes {
   name: string;
+  gender: Gender;
   realm: CultivationRealm;
   age: number;
   spirit: number;      // 灵根资质 1-100

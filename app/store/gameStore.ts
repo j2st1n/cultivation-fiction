@@ -26,6 +26,7 @@ interface GameStore extends GameState {
 
 const INITIAL_PLAYER: PlayerAttributes = {
   name: '',
+  gender: '男',
   realm: '凡人',
   age: 16,
   spirit: 50,
