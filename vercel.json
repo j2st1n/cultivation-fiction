@@ -1,9 +1,0 @@
-{
-  "github": {
-    "enabled": true,
-    "autoJobCancelOnFail": true
-  },
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": "out"
-}
