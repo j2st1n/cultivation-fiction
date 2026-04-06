@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 修仙互动小说游戏
 
-## Getting Started
+AI驱动的网页端互动小说游戏，部署于 Cloudflare Pages。
 
-First, run the development server:
+## 功能
+
+- 🤖 AI 对话互动 - 支持自定义 AI API（OpenAI/DeepSeek/Claude 等）
+- 📖 修仙世界设定 - 境界体系、善恶值、派系势力
+- 💾 存档管理 - 保存进度、导出小说（txt）、导出存档（json）
+- ⚙️ 设置面板 - 切换 AI 供应商、配置 API
+
+## 部署到 Cloudflare Pages
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 进入 Workers & Pages → 创建应用程序 → Pages
+3. 连接到 GitHub，选择 `cultivation-fiction` 仓库
+4. 配置：
+   - 构建命令：`npm run build`
+   - 输出目录：`out`
+5. 部署完成
+
+## 本地开发
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 构建静态页面
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+# 输出在 out/ 目录
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 配置 AI
 
-## Learn More
+首次进入游戏后，在设置面板中：
+- 选择预设供应商（DeepSeek/OpenAI 等）
+- 或手动输入 API Endpoint 和 API Key
 
-To learn more about Next.js, take a look at the following resources:
+所有配置保存在浏览器 localStorage，不上传到服务器。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 技术栈
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 16 + React 19
+- TypeScript
+- Tailwind CSS
+- Zustand（状态管理）
+- Cloudflare Pages（部署）
