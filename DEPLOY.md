@@ -8,10 +8,18 @@
 
 适合公开 GitHub 仓库，流程最简单。
 
+一键部署按钮：
+
+`https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction&output-directory=out`
+
 1. 打开 https://vercel.com
 2. 使用 GitHub 登录
 3. 导入 `cultivation-fiction` 仓库
 4. 直接部署
+
+部署成功后，首次打开应用时，需要在页面设置面板中手动填写 AI API Endpoint / API Key / 模型名称。
+
+这些配置保存在浏览器本地，不依赖 Vercel 环境变量。
 
 ## 方式二：Docker Compose
 
