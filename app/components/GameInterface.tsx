@@ -7,6 +7,18 @@ import { streamChat } from '@/app/lib/ai';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
+const DAOHAO_PREFIXES = ['青', '玄', '紫', '赤', '白', '墨', '玉', '寒', '星', '凌', '流云', '惊鸿', '扶摇', '太虚', '天玑', '飞霜'];
+const DAOHAO_CORES = ['云', '霄', '尘', '渊', '河', '岚', '风', '月', '霜', '雷', '竹', '鹤', '剑', '辰', '岳', '川'];
+const DAOHAO_SUFFIXES = ['子', '真人', '道人', '散人', '居士', '上人'];
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function generateRandomDaohao(): string {
+  return `${pickRandom(DAOHAO_PREFIXES)}${pickRandom(DAOHAO_CORES)}${pickRandom(DAOHAO_SUFFIXES)}`;
+}
+
 function Typewriter({ text, onComplete }: { text: string; onComplete?: () => void }) {
   const [displayed, setDisplayed] = useState('');
   const indexRef = useRef(0);
@@ -780,7 +792,7 @@ function SetupScreen() {
   const { updatePlayer } = useGameStore();
   const { api, updateApi } = useSettingsStore();
   const [step, setStep] = useState<'name' | 'api'>('name');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(generateRandomDaohao);
 
   const handleNameSubmit = () => {
     if (name.trim()) {
@@ -809,6 +821,12 @@ function SetupScreen() {
               className="w-full px-4 py-3 bg-slate-700 border-2 border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-center text-lg mb-4 text-white placeholder:text-slate-400"
               autoFocus
             />
+            <button
+              onClick={() => setName(generateRandomDaohao())}
+              className="w-full py-2 mb-4 bg-slate-700 border border-slate-500 rounded-lg hover:border-cyan-500 hover:text-cyan-300 transition-all text-slate-200"
+            >
+              随机生成道号
+            </button>
             <button
               onClick={handleNameSubmit}
               disabled={!name.trim()}
