@@ -7,21 +7,14 @@ import { streamChat } from '@/app/lib/ai';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
-const SURNAMES = ['张', '王', '李', '赵', '刘', '陈', '杨', '黄', '周', '吴', '徐', '孙', '马', '朱', '胡', '郭', '林', '何', '高', '梁'];
-const GIVEN_NAMES = ['小', '二', '三', '四', '五', '六', '七', '八', '九', '十', '大', '小', '老'];
-const NOUNS = ['虎', '牛', '龙', '狗', '蛋', '根', '柱', '石', '山', '水', '风', '云', '雷', '川', '海', '林', '财', '福', '禄', '寿', '喜', '旺', '顺', '安', '平', '凡', '实', '厚', '德', '义', '孝', '仁'];
-const PLACEHOLDERS = ['', '子', '儿', '郎', '仔'];
+const NICKNAMES = ['小二', '小三', '小四', '小五', '小六', '小七', '小八', '小九', '小十', '石头', '铁蛋', '柱子', '狗剩', '二狗', '三毛', '狗娃', '虎子', '牛儿', '娃子', '蛋蛋', '毛毛', '小毛', '阿福', '阿贵', '阿强', '阿旺', '阿根', '阿土', '阿水', '阿山', '阿林', '阿海', '阿江', '阿河', '阿湖', '阿海', '阿龙', '阿凤', '阿花', '阿草', '阿木', '阿石', '阿金', '阿银', '阿铜', '阿铁', '阿福', '阿禄', '阿寿', '阿喜', '阿庆', '阿发', '阿财', '阿顺', '阿平', '阿安', '阿和', '阿善', '阿美', '阿丽', '阿香', '阿花', '阿菊', '阿兰', '阿梅', '阿桃', '阿杏', '阿枣', '阿梨', '阿瓜', '阿豆', '阿米', '阿麦', '阿谷', '阿稻', '阿粮', '阿仓', '阿库', '阿房', '阿屋', '阿门', '阿窗', '阿床', '阿椅', '阿桌', '阿凳', '阿柜', '阿箱'];
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
 function generateRandomDaohao(): string {
-  const surname = pickRandom(SURNAMES);
-  const given = pickRandom(GIVEN_NAMES);
-  const noun = pickRandom(NOUNS);
-  const suffix = pickRandom(PLACEHOLDERS);
-  return `${surname}${given}${noun}${suffix}`;
+  return pickRandom(NICKNAMES);
 }
 
 function Typewriter({ text, onComplete }: { text: string; onComplete?: () => void }) {
