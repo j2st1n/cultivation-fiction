@@ -1023,12 +1023,10 @@ function SetupScreen() {
     );
   }
 
-  // 如果已验证且有玩家名和API配置，直接进入游戏
   if (isValidated && api.endpoint && api.apiKey && player.name) {
     return <GameInterface />;
   }
 
-  // 否则显示初始设置
   return <InitialSetup />;
 }
 
