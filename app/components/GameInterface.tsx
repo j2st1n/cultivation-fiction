@@ -881,7 +881,9 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
       if (response.ok) {
         const data = await response.json();
         const models = data.data?.map((m: { id: string }) => m.id) || [];
-        updateApi({ model: models[0] || api.model });
+        if (!api.model) {
+          updateApi({ model: models[0] || api.model });
+        }
         setValidated(true);
         setValidationError('');
       } else {
@@ -1032,7 +1034,9 @@ function SetupScreen() {
       if (response.ok) {
         const data = await response.json();
         const models = data.data?.map((m: { id: string }) => m.id) || [];
-        updateApi({ model: models[0] || api.model });
+        if (!api.model) {
+          updateApi({ model: models[0] || api.model });
+        }
         setValidated(true);
       } else {
         setValidationError(`验证失败: ${response.status}`);
