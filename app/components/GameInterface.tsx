@@ -1009,16 +1009,39 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 function SetupScreen() {
   const { player, updatePlayer } = useGameStore();
   const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
-  const [step, setStep] = useState<'name' | 'api'>(player.name ? 'api' : 'name');
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState(generateRandomDaohao);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isValidated && api.endpoint && player.name) {
+        window.location.reload();
+      } else if (!player.name) {
+        setLoading(false);
+      } else if (player.name) {
+        setLoading(false);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [player.name, isValidated, api.endpoint]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="text-cyan-400">加载中...</div>
+      </div>
+    );
+  }
+
+  const step = player.name ? 'api' : 'name';
+
   const handleNameSubmit = () => {
     if (name.trim()) {
       updatePlayer({ name, gender });
-      setStep('api');
+      window.location.reload();
     }
   };
 
