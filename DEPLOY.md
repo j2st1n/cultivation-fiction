@@ -10,12 +10,14 @@
 
 一键部署按钮：
 
-`https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction&output-directory=out`
+`https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction`
 
 1. 打开 https://vercel.com
 2. 使用 GitHub 登录
 3. 导入 `cultivation-fiction` 仓库
 4. 直接部署
+
+注意：如果导入页面里显示 Output Directory，请保持默认或清空，不要手动填写 `out`。
 
 部署成功后，首次打开应用时，需要在页面设置面板中手动填写 AI API Endpoint / API Key / 模型名称。
 
