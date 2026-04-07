@@ -20,7 +20,7 @@ const NEUTRAL_GIVEN_PREFIXES = ['云', '归', '星', '望', '青', '知', '长',
 const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野', '歌', '生', '遥'];
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
-const BLOG_ICON_URL = 'https://img.bins.blog/2026/03/brand/j2-fish.png';
+const BLOG_ICON_URL = '/bins-blog-icon.png';
 const APP_VERSION = '0.3.0';
 
 function pickRandom<T>(items: T[]): T {
@@ -102,9 +102,6 @@ function GitHubIconLink({ className = '' }: { className?: string }) {
 }
 
 function BlogIconLink({ className = '' }: { className?: string }) {
-  const [iconSrc, setIconSrc] = useState(BLOG_ICON_URL);
-  const [imageFailed, setImageFailed] = useState(false);
-
   return (
     <a
       href={BLOG_URL}
@@ -114,22 +111,11 @@ function BlogIconLink({ className = '' }: { className?: string }) {
       title="bins.blog"
       className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
     >
-      {imageFailed ? (
-        <span className="text-xs font-semibold tracking-wide">B</span>
-      ) : (
-        <img
-          src={iconSrc}
-          alt="bins.blog"
-          className="h-5 w-5 rounded-sm"
-          onError={() => {
-            if (iconSrc === BLOG_ICON_URL) {
-              setIconSrc(`${BLOG_ICON_URL}?v=${Date.now()}`);
-              return;
-            }
-            setImageFailed(true);
-          }}
-        />
-      )}
+      <img
+        src={BLOG_ICON_URL}
+        alt="bins.blog"
+        className="h-5 w-5 rounded-sm"
+      />
     </a>
   );
 }
@@ -566,7 +552,7 @@ function GameScreen() {
           
           {currentText && (
             <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-200">
-              <StoryMarkdown content={currentText} />
+              <div className="leading-relaxed whitespace-pre-wrap">{currentText}</div>
             </div>
           )}
           
