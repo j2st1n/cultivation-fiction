@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project roadmap
+    url: https://github.com/j2st1n/cultivation-fiction/blob/main/ROADMAP.md
+    about: Review current direction before opening a planning-related issue.
