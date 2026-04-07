@@ -76,6 +76,8 @@ npm run build
 npm run preview
 ```
 
+The project is designed for static hosting and no longer ships Docker deployment files.
+
 ## Deployment
 
 ### Vercel
@@ -213,6 +215,8 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+项目当前以静态托管为主，不再提供 Docker 部署文件。
 
 ## 部署
 
