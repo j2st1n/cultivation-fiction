@@ -9,6 +9,7 @@ import type { Message } from '@/app/types/game';
 
 const NICKNAMES = ['小二', '小三', '小四', '小五', '小六', '小七', '小八', '小九', '小十', '石头', '铁蛋', '柱子', '狗剩', '二狗', '三毛', '狗娃', '虎子', '牛儿', '娃子', '蛋蛋', '毛毛', '小毛', '阿福', '阿贵', '阿强', '阿旺', '阿根', '阿土', '阿水', '阿山', '阿林', '阿海', '阿江', '阿河', '阿湖', '阿海', '阿龙', '阿凤', '阿花', '阿草', '阿木', '阿石', '阿金', '阿银', '阿铜', '阿铁', '阿福', '阿禄', '阿寿', '阿喜', '阿庆', '阿发', '阿财', '阿顺', '阿平', '阿安', '阿和', '阿善', '阿美', '阿丽', '阿香', '阿花', '阿菊', '阿兰', '阿梅', '阿桃', '阿杏', '阿枣', '阿梨', '阿瓜', '阿豆', '阿米', '阿麦', '阿谷', '阿稻', '阿粮', '阿仓', '阿库', '阿房', '阿屋', '阿门', '阿窗', '阿床', '阿椅', '阿桌', '阿凳', '阿柜', '阿箱'];
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
+const APP_VERSION = '0.2.1';
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -338,6 +339,7 @@ function GameScreen() {
             修仙世界
           </h1>
           <div className="flex items-center gap-4 text-sm">
+            <span className="text-xs text-slate-500">v{APP_VERSION}</span>
             <GitHubIconLink className="px-1" />
             <button 
               onClick={() => setShowWorldPanel(true)}
@@ -852,36 +854,93 @@ function extractSaveData(rawData: unknown): unknown {
 }
 
 function buildChapterSections(storyMessages: string[]): Array<{ title: string; content: string }> {
+  const cleanedMessages = storyMessages.map((message) => message.trim()).filter(Boolean);
+  if (cleanedMessages.length === 0) {
+    return [];
+  }
+
+  const minTarget = 1200;
+  const preferredTarget = 1800;
+  const maxTarget = 2500;
   const chapters: Array<{ title: string; content: string }> = [];
-  const paragraphs: string[] = [];
+  let currentMessages: string[] = [];
+  let currentLength = 0;
 
-  storyMessages.forEach((message) => {
-    paragraphs.push(...message.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean));
-  });
+  cleanedMessages.forEach((message, index) => {
+    currentMessages.push(message);
+    currentLength += countChineseLength(message);
 
-  let chapterNumber = 1;
-  let currentParagraphs: string[] = [];
+    const isLastMessage = index === cleanedMessages.length - 1;
+    const boundaryScore = getNarrativeBoundaryScore(message);
+    const reachedPreferredRange = currentLength >= preferredTarget;
+    const reachedMinimumRange = currentLength >= minTarget;
+    const reachedHardLimit = currentLength >= maxTarget;
 
-  paragraphs.forEach((paragraph, index) => {
-    currentParagraphs.push(paragraph);
-    const paragraphCount = currentParagraphs.length;
-    const isLongEnough = paragraphCount >= 4;
-    const isSceneBoundary = /[。！？]$/.test(paragraph) && paragraph.length >= 40;
-    const isLastParagraph = index === paragraphs.length - 1;
-
-    if ((isLongEnough && isSceneBoundary) || paragraphCount >= 6 || isLastParagraph) {
+    if (
+      reachedHardLimit ||
+      (reachedPreferredRange && boundaryScore >= 2) ||
+      (reachedMinimumRange && boundaryScore >= 3) ||
+      isLastMessage
+    ) {
+      const content = currentMessages.join('\n\n');
       chapters.push({
-        title: `第${toChineseNumber(chapterNumber)}章`,
-        content: currentParagraphs.join('\n\n'),
+        title: buildChapterTitle(chapters.length + 1, content),
+        content,
       });
-      chapterNumber += 1;
-      currentParagraphs = [];
+      currentMessages = [];
+      currentLength = 0;
     }
   });
 
-  return chapters.length > 0
-    ? chapters
-    : [{ title: '第一章', content: storyMessages.join('\n\n') }];
+  return chapters;
+}
+
+function countChineseLength(text: string): number {
+  return text.replace(/\s+/g, '').length;
+}
+
+function getNarrativeBoundaryScore(message: string): number {
+  const strongBoundaries = ['次日', '翌日', '数日后', '数日之后', '转眼', '终于抵达', '尘埃落定', '突破成功', '此战暂了', '这一战结束', '踏入', '迈入'];
+  const mediumBoundaries = ['此时', '忽然', '片刻后', '与此同时', '随后', '旋即', '来到', '进入', '前往', '离开', '回到', '夜色降临', '天色渐晚'];
+
+  if (strongBoundaries.some((phrase) => message.includes(phrase))) {
+    return 3;
+  }
+
+  if (mediumBoundaries.some((phrase) => message.includes(phrase))) {
+    return 2;
+  }
+
+  if (message.length >= 600 && /[。！？]$/.test(message.trim())) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function buildChapterTitle(chapterNumber: number, content: string): string {
+  const subtitle = extractChapterSubtitle(content);
+  return subtitle ? `第${toChineseNumber(chapterNumber)}章 ${subtitle}` : `第${toChineseNumber(chapterNumber)}章`;
+}
+
+function extractChapterSubtitle(content: string): string {
+  const placeMatch = content.match(/([\u4e00-\u9fa5]{2,8}(镇|城|山|谷|宗|宫|阁|林|湖|渊|峰|殿|岛|关|村))/);
+  const eventKeywords = ['试炼', '突破', '异变', '夜战', '入门', '线索', '秘境', '风波', '机缘', '追查', '相遇', '杀机', '来客', '惊变', '劫云'];
+  const event = eventKeywords.find((keyword) => content.includes(keyword));
+
+  if (placeMatch && event) {
+    return `${placeMatch[1]}·${event}`;
+  }
+
+  if (placeMatch) {
+    return placeMatch[1];
+  }
+
+  if (event) {
+    return event;
+  }
+
+  return '';
 }
 
 function toChineseNumber(value: number): string {
@@ -1107,6 +1166,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
+          <div className="mb-2 text-xs text-slate-500">v{APP_VERSION}</div>
           <GitHubIconLink className="mx-auto h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
         </div>
         {step === 'name' ? (
