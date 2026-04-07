@@ -56,18 +56,23 @@ export function buildContextMessage(
   playerName: string,
   playerRealm: string,
   location: string,
+  mainStoryArc: string,
+  currentObjective: string,
   storyProgress: number
 ): string {
   return `玩家信息：
 - 姓名：${playerName || '未命名'}
 - 境界：${playerRealm}
 - 当前地点：${location}
+- 主线脉络：${mainStoryArc || '尚在展开中'}
+- 当前目标：${currentObjective || '等待新的线索或行动方向'}
 - 故事进度：${storyProgress}
 
 请继续叙事，确保：
 1. 根据玩家选择的选项推进剧情
 2. 境界提升要有明确的修炼过程和考验
-3. 保持修仙世界的韵味和氛围`;
+ 3. 保持主线脉络连续，不要遗忘长期目标
+ 4. 当前目标要清晰，并能随着剧情自然推进`;
 }
 
 export function parseChoicesFromResponse(text: string): string[] {
@@ -111,13 +116,41 @@ export function detectRealmUpgrade(text: string): CultivationRealm | null {
   return null;
 }
 
-export function extractMainQuest(text: string): string {
+export function extractMainStoryArc(text: string): string {
   const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
   const patterns = [
-    /当前(?:主线|任务|目标)[：:]\s*([^\n。！？]+)/,
     /主线(?:任务|目标)[：:]\s*([^\n。！？]+)/,
-    /你的目标是([^\n。！？]+)/,
     /你此行是为了([^\n。！？]+)/,
+    /此行的目的在于([^\n。！？]+)/,
+    /这一局的核心矛盾是([^\n。！？]+)/,
+    /你卷入了([^\n。！？]+)/,
+    /你真正要面对的是([^\n。！？]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = storyPart.match(pattern);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  const sentences = storyPart
+    .split(/(?<=[。！？])/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const arcSentence = sentences.find((sentence) =>
+    /真相|身世|宿敌|秘境|传承|预言|因果|灾劫|纷争|阴谋|遗迹|异象|复仇|线索背后|真正目的/.test(sentence)
+  );
+
+  return arcSentence || '本局主线脉络正在展开，更多核心矛盾会随着剧情推进浮现。';
+}
+
+export function extractCurrentObjective(text: string): string {
+  const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
+  const patterns = [
+    /当前(?:任务|目标)[：:]\s*([^\n。！？]+)/,
+    /你的目标是([^\n。！？]+)/,
     /你必须([^\n。！？]+)/,
     /你决定([^\n。！？]+)/,
     /当务之急是([^\n。！？]+)/,
@@ -126,7 +159,6 @@ export function extractMainQuest(text: string): string {
     /眼下最重要的是([^\n。！？]+)/,
     /如今最重要的是([^\n。！？]+)/,
     /你眼下要做的是([^\n。！？]+)/,
-    /此行的目的在于([^\n。！？]+)/,
     /你的当务之急是([^\n。！？]+)/,
     /你接下来要([^\n。！？]+)/,
     /你准备([^\n。！？]+)/,
@@ -145,20 +177,30 @@ export function extractMainQuest(text: string): string {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 
-  const questSentence = sentences.find((sentence) =>
-    /目标|寻找|查明|夺回|阻止|护送|调查|试炼|复仇|解开|进入|前往|拯救|追查|赶往|设法|尽快|打探|弄清|完成|取得|拜入|逃离|营救/.test(sentence)
+  const objectiveSentence = sentences.find((sentence) =>
+    /前往|赶往|调查|寻找|查明|阻止|护送|打探|完成|取得|拜入|进入|逃离|营救|设法|尽快/.test(sentence)
   );
 
-  return questSentence || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。';
+  return objectiveSentence || '当前目标正在更新，新的行动方向会随着剧情推进明确。';
 }
 
-export function shouldUpdateMainQuest(nextQuest: string, currentQuest: string): boolean {
-  if (!nextQuest.trim()) return false;
-  if (!currentQuest.trim()) return true;
-  if (nextQuest === currentQuest) return false;
-  if (nextQuest.includes('本局主线正在展开')) return false;
-  if (nextQuest.length < 6) return false;
-  if (currentQuest.includes(nextQuest)) return false;
+export function shouldUpdateStoryArc(nextArc: string, currentArc: string): boolean {
+  if (!nextArc.trim()) return false;
+  if (!currentArc.trim()) return true;
+  if (nextArc === currentArc) return false;
+  if (nextArc.includes('主线脉络正在展开')) return false;
+  if (nextArc.length < 8) return false;
+  if (currentArc.includes(nextArc)) return false;
+  return true;
+}
+
+export function shouldUpdateCurrentObjective(nextObjective: string, currentObjective: string): boolean {
+  if (!nextObjective.trim()) return false;
+  if (!currentObjective.trim()) return true;
+  if (nextObjective === currentObjective) return false;
+  if (nextObjective.includes('当前目标正在更新')) return false;
+  if (nextObjective.length < 6) return false;
+  if (currentObjective.includes(nextObjective)) return false;
   return true;
 }
 

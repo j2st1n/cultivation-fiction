@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Globe, Save, Settings } from 'lucide-react';
+import { BookOpen, Globe, Save, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractMainQuest, shouldAdvanceRealm, shouldUpdateMainQuest } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractMainStoryArc, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateStoryArc } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 
 const MALE_PLAIN_NAMES = ['阿木', '阿石', '阿川', '阿山', '阿林', '阿河', '阿生', '阿顺', '阿安', '阿旺', '石头', '柱子', '虎子', '川子', '平安', '长生'];
@@ -21,7 +21,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = 'https://img.bins.blog/2026/03/brand/j2-fish.png';
-const APP_VERSION = '0.2.2';
+const APP_VERSION = '0.3.0';
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -167,13 +167,15 @@ function StoryMarkdown({ content }: { content: string }) {
 function applyResponseStateUpdates({
   text,
   currentRealm,
-  currentMainQuest,
+  mainStoryArc,
+  currentObjective,
   advanceRealm,
   updateWorld,
 }: {
   text: string;
   currentRealm: CultivationRealm;
-  currentMainQuest: string;
+  mainStoryArc: string;
+  currentObjective: string;
   advanceRealm: (newRealm: import('@/app/types/game').CultivationRealm) => void;
   updateWorld: (updates: Partial<import('@/app/types/game').WorldState>) => void;
 }) {
@@ -182,9 +184,20 @@ function applyResponseStateUpdates({
     advanceRealm(nextRealm);
   }
 
-  const nextQuest = extractMainQuest(text);
-  if (shouldUpdateMainQuest(nextQuest, currentMainQuest)) {
-    updateWorld({ currentMainQuest: nextQuest });
+  const nextArc = extractMainStoryArc(text);
+  const nextObjective = extractCurrentObjective(text);
+  const updates: Partial<import('@/app/types/game').WorldState> = {};
+
+  if (shouldUpdateStoryArc(nextArc, mainStoryArc)) {
+    updates.mainStoryArc = nextArc;
+  }
+
+  if (shouldUpdateCurrentObjective(nextObjective, currentObjective)) {
+    updates.currentObjective = nextObjective;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    updateWorld(updates);
   }
 }
 
@@ -225,6 +238,7 @@ function GameScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showWorldPanel, setShowWorldPanel] = useState(false);
+  const [showStoryPanel, setShowStoryPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isInitialized = player.name && api.endpoint && isValidated;
@@ -255,7 +269,8 @@ function GameScreen() {
         applyResponseStateUpdates({
           text,
           currentRealm: player.realm,
-          currentMainQuest: world.currentMainQuest,
+          mainStoryArc: world.mainStoryArc,
+          currentObjective: world.currentObjective,
           advanceRealm,
           updateWorld,
         });
@@ -301,6 +316,8 @@ function GameScreen() {
       player.name,
       player.realm,
       world.currentLocation,
+      world.mainStoryArc,
+      world.currentObjective,
       storyProgress
     );
     
@@ -323,7 +340,8 @@ function GameScreen() {
         applyResponseStateUpdates({
           text,
           currentRealm: player.realm,
-          currentMainQuest: world.currentMainQuest,
+          mainStoryArc: world.mainStoryArc,
+          currentObjective: world.currentObjective,
           advanceRealm,
           updateWorld,
         });
@@ -358,6 +376,8 @@ function GameScreen() {
       player.name,
       player.realm,
       world.currentLocation,
+      world.mainStoryArc,
+      world.currentObjective,
       storyProgress
     );
     
@@ -374,7 +394,8 @@ function GameScreen() {
         applyResponseStateUpdates({
           text,
           currentRealm: player.realm,
-          currentMainQuest: world.currentMainQuest,
+          mainStoryArc: world.mainStoryArc,
+          currentObjective: world.currentObjective,
           advanceRealm,
           updateWorld,
         });
@@ -418,6 +439,8 @@ function GameScreen() {
       player.name,
       player.realm,
       world.currentLocation,
+      world.mainStoryArc,
+      world.currentObjective,
       storyProgress
     );
     
@@ -438,7 +461,8 @@ function GameScreen() {
         applyResponseStateUpdates({
           text,
           currentRealm: player.realm,
-          currentMainQuest: world.currentMainQuest,
+          mainStoryArc: world.mainStoryArc,
+          currentObjective: world.currentObjective,
           advanceRealm,
           updateWorld,
         });
@@ -476,6 +500,9 @@ function GameScreen() {
             <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300">
               {player.realm}
             </span>
+            <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
+              <BookOpen size={18} strokeWidth={1.5} />
+            </HeaderIconButton>
             <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
               <Globe size={18} strokeWidth={1.5} />
             </HeaderIconButton>
@@ -508,6 +535,13 @@ function GameScreen() {
           player={player}
           world={world}
           storyProgress={storyProgress}
+        />
+      )}
+
+      {showStoryPanel && (
+        <StoryPanel
+          onClose={() => setShowStoryPanel(false)}
+          world={world}
         />
       )}
 
@@ -713,18 +747,47 @@ function WorldPanel({
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StoryPanel({
+  onClose,
+  world,
+}: {
+  onClose: () => void;
+  world: import('@/app/types/game').WorldState;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-slate-200">剧情脉络</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+        </div>
 
         <div className="mb-6">
-          <h3 className="text-cyan-400 font-bold mb-2">当前主线</h3>
+          <h3 className="text-cyan-400 font-bold mb-2">主线脉络</h3>
           <div className="p-4 bg-slate-700/50 rounded-lg">
-            <p className="text-slate-300 text-sm">
-              {world.currentMainQuest || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。'}
-            </p>
-            <p className="text-slate-500 text-xs mt-2">
-              不同开局会拥有不同背景、目标与因果。
+            <p className="text-slate-300 text-sm leading-relaxed">
+              {world.mainStoryArc || '本局主线脉络正在展开，更多核心矛盾会随着剧情推进浮现。'}
             </p>
           </div>
         </div>
+
+        <div className="mb-2">
+          <h3 className="text-cyan-400 font-bold mb-2">当前目标</h3>
+          <div className="p-4 bg-slate-700/50 rounded-lg">
+            <p className="text-slate-300 text-sm leading-relaxed">
+              {world.currentObjective || '当前目标正在更新，新的行动方向会随着剧情推进明确。'}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs text-slate-500">
+          主线脉络负责保持长期一致性，当前目标用于追踪眼下该做什么。
+        </p>
       </div>
     </div>
   );
