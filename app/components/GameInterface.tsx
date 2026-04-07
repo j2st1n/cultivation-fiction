@@ -255,6 +255,7 @@ function GameScreen() {
           timestamp: Date.now(),
         };
         addMessage(aiMessage);
+        setCurrentText('');
         setChoices(parseChoicesFromResponse(text));
         setRequiresInput(checkRequiresInput(text));
         setGenerating(false);
@@ -322,6 +323,7 @@ function GameScreen() {
           timestamp: Date.now(),
         };
         addMessage(aiMessage);
+        setCurrentText('');
         setChoices(parseChoicesFromResponse(text));
         setRequiresInput(checkRequiresInput(text));
         setGenerating(false);
@@ -372,6 +374,7 @@ function GameScreen() {
           timestamp: Date.now(),
         };
         addMessage(aiMessage);
+        setCurrentText('');
         setChoices(parseChoicesFromResponse(text));
         setRequiresInput(checkRequiresInput(text));
         setGenerating(false);
@@ -435,6 +438,7 @@ function GameScreen() {
           timestamp: Date.now(),
         };
         addMessage(aiMessage);
+        setCurrentText('');
         setChoices(parseChoicesFromResponse(text));
         setRequiresInput(checkRequiresInput(text));
         setGenerating(false);
