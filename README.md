@@ -122,6 +122,7 @@ That means:
 - Bug reports: use the GitHub bug template
 - Feature requests: use the GitHub feature template
 - Pull requests: follow [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Security reporting: see [SECURITY.md](./SECURITY.md)
 
 ## Versioning
 
@@ -134,6 +135,12 @@ Release notes will be tracked in [CHANGELOG.md](./CHANGELOG.md).
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+
+## Community Health
+
+- Contribution guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Security policy: [SECURITY.md](./SECURITY.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 
 ---
 
@@ -253,6 +260,7 @@ npm run preview
 - Bug 反馈请使用 GitHub bug template
 - 功能建议请使用 GitHub feature template
 - 提交 PR 前请参考 [CONTRIBUTING.md](./CONTRIBUTING.md)
+- 安全问题请参考 [SECURITY.md](./SECURITY.md)
 
 ## 版本与发布
 
@@ -265,3 +273,9 @@ npm run preview
 ## 许可证
 
 本项目使用 MIT License，详见 [LICENSE](./LICENSE)
+
+## 社区规范
+
+- 贡献指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
+- 安全策略：[SECURITY.md](./SECURITY.md)
+- 行为准则：[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
