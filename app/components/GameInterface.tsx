@@ -101,6 +101,7 @@ function GitHubIconLink({ className = '' }: { className?: string }) {
 }
 
 function BlogIconLink({ className = '' }: { className?: string }) {
+  const [iconSrc, setIconSrc] = useState(BLOG_ICON_URL);
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
@@ -116,10 +117,16 @@ function BlogIconLink({ className = '' }: { className?: string }) {
         <span className="text-xs font-semibold tracking-wide">B</span>
       ) : (
         <img
-          src={BLOG_ICON_URL}
+          src={iconSrc}
           alt="bins.blog"
           className="h-5 w-5 rounded-sm"
-          onError={() => setImageFailed(true)}
+          onError={() => {
+            if (iconSrc === BLOG_ICON_URL) {
+              setIconSrc(`${BLOG_ICON_URL}?v=${Date.now()}`);
+              return;
+            }
+            setImageFailed(true);
+          }}
         />
       )}
     </a>
