@@ -9,6 +9,8 @@ import type { Message } from '@/app/types/game';
 
 const NICKNAMES = ['小二', '小三', '小四', '小五', '小六', '小七', '小八', '小九', '小十', '石头', '铁蛋', '柱子', '狗剩', '二狗', '三毛', '狗娃', '虎子', '牛儿', '娃子', '蛋蛋', '毛毛', '小毛', '阿福', '阿贵', '阿强', '阿旺', '阿根', '阿土', '阿水', '阿山', '阿林', '阿海', '阿江', '阿河', '阿湖', '阿海', '阿龙', '阿凤', '阿花', '阿草', '阿木', '阿石', '阿金', '阿银', '阿铜', '阿铁', '阿福', '阿禄', '阿寿', '阿喜', '阿庆', '阿发', '阿财', '阿顺', '阿平', '阿安', '阿和', '阿善', '阿美', '阿丽', '阿香', '阿花', '阿菊', '阿兰', '阿梅', '阿桃', '阿杏', '阿枣', '阿梨', '阿瓜', '阿豆', '阿米', '阿麦', '阿谷', '阿稻', '阿粮', '阿仓', '阿库', '阿房', '阿屋', '阿门', '阿窗', '阿床', '阿椅', '阿桌', '阿凳', '阿柜', '阿箱'];
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
+const BLOG_URL = 'https://bins.blog';
+const BLOG_ICON_URL = 'https://bins.blog/favicon.ico';
 const APP_VERSION = '0.2.1';
 
 function pickRandom<T>(items: T[]): T {
@@ -64,6 +66,25 @@ function GitHubIconLink({ className = '' }: { className?: string }) {
       >
         <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.866-.013-1.7-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.56 9.56 0 0 1 2.504.337c1.909-1.296 2.747-1.026 2.747-1.026.546 1.378.203 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.31.678.921.678 1.857 0 1.34-.012 2.42-.012 2.75 0 .269.18.58.688.481A10.019 10.019 0 0 0 22 12.017C22 6.484 17.523 2 12 2Z" />
       </svg>
+    </a>
+  );
+}
+
+function BlogIconLink({ className = '' }: { className?: string }) {
+  return (
+    <a
+      href={BLOG_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="bins.blog"
+      title="bins.blog"
+      className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
+    >
+      <img
+        src={BLOG_ICON_URL}
+        alt="bins.blog"
+        className="h-5 w-5 rounded-sm"
+      />
     </a>
   );
 }
@@ -340,6 +361,7 @@ function GameScreen() {
           </h1>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-xs text-slate-500">v{APP_VERSION}</span>
+            <BlogIconLink className="px-1" />
             <GitHubIconLink className="px-1" />
             <button 
               onClick={() => setShowWorldPanel(true)}
@@ -1167,7 +1189,10 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
           <div className="mb-2 text-xs text-slate-500">v{APP_VERSION}</div>
-          <GitHubIconLink className="mx-auto h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
+          <div className="flex items-center justify-center gap-3">
+            <BlogIconLink className="h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
+            <GitHubIconLink className="h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
+          </div>
         </div>
         {step === 'name' ? (
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
