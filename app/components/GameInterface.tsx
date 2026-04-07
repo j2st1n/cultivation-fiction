@@ -1004,12 +1004,13 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 }
 
 function SetupScreen() {
-  const { player, updatePlayer } = useGameStore();
+  const { player } = useGameStore();
   const { api, isValidated } = useSettingsStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 50);
+    const timer = setTimeout(() => setLoading(false), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
@@ -1020,8 +1021,15 @@ function SetupScreen() {
     );
   }
 
-  if (isValidated && api.endpoint && player.name) {
+  const hasPlayer = !!player.name;
+  const hasApi = !!api.endpoint && isValidated;
+
+  if (hasPlayer && hasApi) {
     return <GameInterface />;
+  }
+
+  if (hasPlayer && !hasApi) {
+    return <InitialSetup />;
   }
 
   return <InitialSetup />;
