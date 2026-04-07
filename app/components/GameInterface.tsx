@@ -98,13 +98,11 @@ function GameScreen() {
     
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
-      role: 'user',
+      role: 'system',
       content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${world.currentLocation}。请根据以下要求直接生成本次独立开局：\n\n${INITIAL_STORY}`,
       timestamp: Date.now(),
     };
-    
-    addMessage(initialMessage);
-    
+
     const fullMessages: Message[] = [initialMessage];
     
     let fullResponse = '';
