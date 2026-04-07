@@ -6,6 +6,15 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-07
+
+### Added
+- Small visible version label in the setup and game header
+
+### Changed
+- TXT novel export now groups chapters by narrative chunks instead of raw paragraph counts
+- Chapter titles now prefer lightweight subtitles based on place or event keywords
+
 ## [0.2.0] - 2026-04-07
 
 ### Added
