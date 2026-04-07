@@ -21,7 +21,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = 'https://img.bins.blog/2026/03/brand/j2-fish.png';
-const APP_VERSION = '0.2.1';
+const APP_VERSION = '0.2.2';
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];

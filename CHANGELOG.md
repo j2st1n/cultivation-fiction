@@ -6,6 +6,17 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-07
+
+### Added
+- Markdown rendering for assistant story output in both final and streaming states
+
+### Changed
+- Current main quest extraction now tracks more actionable objective phrasing
+- Header controls were unified with minimalist icon buttons and age was moved fully into the world panel
+- Blog icon loading now retries once before falling back
+- Chat view no longer forces scroll-to-bottom after each response
+
 ## [0.2.1] - 2026-04-07
 
 ### Added
