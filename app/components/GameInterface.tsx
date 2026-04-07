@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Globe, Save, Settings } from 'lucide-react';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
@@ -115,6 +116,28 @@ function BlogIconLink({ className = '' }: { className?: string }) {
         className="h-5 w-5 rounded-sm"
       />
     </a>
+  );
+}
+
+function HeaderIconButton({
+  title,
+  onClick,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700/70 bg-slate-800/40 text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-100"
+      title={title}
+      aria-label={title}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -388,36 +411,23 @@ function GameScreen() {
           <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
             修仙世界
           </h1>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 text-sm">
             <span className="text-xs text-slate-500">v{APP_VERSION}</span>
             <BlogIconLink className="px-1" />
             <GitHubIconLink className="px-1" />
-            <button 
-              onClick={() => setShowWorldPanel(true)}
-              className="text-slate-400 hover:text-slate-200 text-sm px-2"
-              title="世界观"
-            >
-              世界观
-            </button>
             <span className="text-slate-400">{player.name}</span>
             <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300">
               {player.realm}
             </span>
-            <span className="text-slate-500" title="年龄">年龄: {player.age}</span>
-            <button 
-              onClick={() => setShowSettings(true)}
-              className="text-slate-400 hover:text-slate-200"
-              title="AI设置"
-            >
-              ⚙️
-            </button>
-            <button 
-              onClick={() => setShowSavePanel(true)}
-              className="text-slate-400 hover:text-slate-200"
-              title="存档"
-            >
-              💾
-            </button>
+            <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
+              <Globe size={18} strokeWidth={1.5} />
+            </HeaderIconButton>
+            <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
+              <Settings size={18} strokeWidth={1.5} />
+            </HeaderIconButton>
+            <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
+              <Save size={18} strokeWidth={1.5} />
+            </HeaderIconButton>
           </div>
         </div>
       </header>
