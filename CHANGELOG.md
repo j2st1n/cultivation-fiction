@@ -6,6 +6,16 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-07
+
+### Added
+- Dedicated 剧情 panel with separate 主线脉络 and 当前目标 views
+
+### Changed
+- Story state was upgraded from a single quest slot into a two-layer structure for long-term arc + current objective
+- AI context now includes both main story arc and current objective to improve long-conversation consistency with lower narrative drift
+- 世界观 panel now focuses on static world and character information only
+
 ## [0.2.2] - 2026-04-07
 
 ### Added
