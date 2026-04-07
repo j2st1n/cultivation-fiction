@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Globe, Save, Settings } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
@@ -155,6 +156,14 @@ function HeaderIconButton({
   );
 }
 
+function StoryMarkdown({ content }: { content: string }) {
+  return (
+    <div className="prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-strong:text-slate-100 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:text-slate-100">
+      <ReactMarkdown>{content}</ReactMarkdown>
+    </div>
+  );
+}
+
 function applyResponseStateUpdates({
   text,
   currentRealm,
@@ -217,13 +226,8 @@ function GameScreen() {
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isInitialized = player.name && api.endpoint && isValidated;
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const startGame = useCallback(async () => {
     if (!player.name || !isInitialized) return;
@@ -519,7 +523,7 @@ function GameScreen() {
               }`}
             >
               {msg.role === 'assistant' ? (
-                <div className="leading-relaxed">{msg.content}</div>
+                <StoryMarkdown content={msg.content} />
               ) : (
                 <p>{msg.content}</p>
               )}
@@ -528,11 +532,10 @@ function GameScreen() {
           
           {currentText && (
             <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-200">
-              <div className="leading-relaxed whitespace-pre-wrap">{currentText}</div>
+              <StoryMarkdown content={currentText} />
             </div>
           )}
           
-          <div ref={messagesEndRef} />
         </div>
 
         {errorMsg && (
