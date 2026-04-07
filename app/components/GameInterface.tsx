@@ -337,7 +337,8 @@ export default function GameInterface() {
           onReset={() => {
             if (confirm('确定要重置游戏吗？所有进度将丢失。')) {
               resetGame();
-              window.location.reload();
+              useSettingsStore.getState().setValidated(false);
+              useSettingsStore.getState().updateApi({ endpoint: '', model: '' });
             }
           }}
         />
@@ -1034,12 +1035,17 @@ function InitialSetup() {
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [readyToPlay, setReadyToPlay] = useState(false);
+
+  if (readyToPlay) {
+    return <GameInterface />;
+  }
 
   const handleNameSubmit = () => {
     if (name.trim()) {
       updatePlayer({ name, gender });
-      setStep('api');
     }
+    setStep('api');
   };
 
   const handleRandomName = () => {
@@ -1221,7 +1227,7 @@ function InitialSetup() {
             </button>
 
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setReadyToPlay(true)}
               disabled={!isValidated}
               className="mt-3 w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-white"
             >
