@@ -45,6 +45,28 @@ function Typewriter({ text, onComplete }: { text: string; onComplete?: () => voi
   return <p className="whitespace-pre-wrap leading-relaxed">{displayed}</p>;
 }
 
+function GitHubIconLink({ className = '' }: { className?: string }) {
+  return (
+    <a
+      href={GITHUB_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub Repository"
+      title="GitHub Repository"
+      className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+        className="h-5 w-5"
+      >
+        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.866-.013-1.7-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.56 9.56 0 0 1 2.504.337c1.909-1.296 2.747-1.026 2.747-1.026.546 1.378.203 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.31.678.921.678 1.857 0 1.34-.012 2.42-.012 2.75 0 .269.18.58.688.481A10.019 10.019 0 0 0 22 12.017C22 6.484 17.523 2 12 2Z" />
+      </svg>
+    </a>
+  );
+}
+
 export default function GameInterface() {
   const { player } = useGameStore();
   const { api, isValidated } = useSettingsStore();
@@ -316,15 +338,7 @@ function GameScreen() {
             修仙世界
           </h1>
           <div className="flex items-center gap-4 text-sm">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-400 hover:text-slate-200 text-sm px-2"
-              title="GitHub"
-            >
-              GitHub
-            </a>
+            <GitHubIconLink className="px-1" />
             <button 
               onClick={() => setShowWorldPanel(true)}
               className="text-slate-400 hover:text-slate-200 text-sm px-2"
@@ -1093,14 +1107,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-slate-400 hover:text-slate-200 underline underline-offset-4"
-          >
-            GitHub Repository
-          </a>
+          <GitHubIconLink className="mx-auto h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
         </div>
         {step === 'name' ? (
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
