@@ -45,6 +45,20 @@ function Typewriter({ text, onComplete }: { text: string; onComplete?: () => voi
 }
 
 export default function GameInterface() {
+  const { player } = useGameStore();
+  const { api, isValidated } = useSettingsStore();
+
+  const hasPlayer = Boolean(player.name);
+  const hasApi = Boolean(api.endpoint && api.apiKey && isValidated);
+
+  if (!hasPlayer || !hasApi) {
+    return <InitialSetup initialStep={hasPlayer ? 'api' : 'name'} />;
+  }
+
+  return <GameScreen />;
+}
+
+function GameScreen() {
   const { 
     player, 
     world, 
@@ -1003,46 +1017,18 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
   );
 }
 
-function SetupScreen() {
-  const { player } = useGameStore();
-  const { api, isValidated } = useSettingsStore();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-cyan-400">加载中...</div>
-      </div>
-    );
-  }
-
-  // 首次访问或未配置：显示初始设置
-  // 只有已验证通过且有玩家名和API配置时才进入游戏
-  if (isValidated && api.endpoint && player.name) {
-    return <GameInterface />;
-  }
-
-  return <InitialSetup />;
-}
-
-function InitialSetup() {
+function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const { updatePlayer } = useGameStore();
   const { api, updateApi, availableModels, fetchModels, setValidated, isValidated } = useSettingsStore();
-  const [step, setStep] = useState<'name' | 'api'>('name');
+  const [step, setStep] = useState<'name' | 'api'>(initialStep);
   const [name, setName] = useState(generateRandomDaohao);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
-  const [readyToPlay, setReadyToPlay] = useState(false);
 
-  if (readyToPlay) {
-    return <GameInterface />;
-  }
+  useEffect(() => {
+    setStep(initialStep);
+  }, [initialStep]);
 
   const handleNameSubmit = () => {
     if (name.trim()) {
@@ -1230,8 +1216,8 @@ function InitialSetup() {
             </button>
 
             <button
-              onClick={() => setReadyToPlay(true)}
-              disabled={!isValidated}
+              onClick={() => undefined}
+              disabled={!isValidated || !api.endpoint || !api.apiKey}
               className="mt-3 w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-white"
             >
               进入游戏
