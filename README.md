@@ -4,7 +4,7 @@
 
 AI-powered interactive cultivation novel game for the web.
 
-Players can start a new run with a custom name, gender, and AI provider, then experience an open-ended xianxia story with branching choices, free-form input, local save data, and dynamic AI-generated openings.
+Players can start a new run with a custom name, gender, and AI provider, then experience an open-ended xianxia story with branching choices, free-form input, local save data, dynamic AI-generated openings, and a layered story tracker built around 主线脉络 and 当前目标.
 
 <p>
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction" target="_blank" rel="noopener noreferrer">
@@ -14,12 +14,14 @@ Players can start a new run with a custom name, gender, and AI provider, then ex
 
 ## Highlights
 
-- Dynamic AI-generated opening background and main quest for each new run
+- Dynamic AI-generated opening background and long-term story direction for each new run
 - Mixed interaction mode with structured choices and free input
+- Dedicated 剧情 panel with separate 主线脉络 and 当前目标
 - In-browser save system with TXT novel export and JSON save import/export
 - Configurable AI endpoint, model selection, model fetch, and connection validation
 - Static deployment target for Vercel and Cloudflare Pages
 - Client-side API key usage with no server-side key storage in this project
+- Markdown rendering for assistant story output
 
 ## Current Status
 
@@ -27,8 +29,8 @@ This project is active and intended for continued iteration.
 
 Current priorities include:
 
-- improving story consistency across long conversations
-- surfacing more structured world state and quest tracking
+- improving long-conversation narrative consistency with layered story state
+- surfacing more structured world state, story arc, and objective tracking
 - polishing the onboarding and save/load experience
 - strengthening project docs and collaboration workflows
 
@@ -41,7 +43,8 @@ See [ROADMAP.md](./ROADMAP.md) for planned work.
 3. Configure your AI endpoint, API key, and model
 4. Validate the connection
 5. Enter the game and receive a unique AI-generated opening
-6. Progress using options or your own custom actions
+6. Follow 主线脉络 and 当前目标 in the dedicated 剧情 panel
+7. Progress using options or your own custom actions
 
 ## Stack
 
@@ -105,7 +108,7 @@ More details: [DEPLOY.md](./DEPLOY.md)
 
 ## Save Data
 
-- TXT export creates a readable novel-style text file
+- TXT export creates a more novel-like text file with softer chapter chunking and lightweight chapter subtitles
 - JSON export preserves structured save data
 - JSON import restores prior game state
 
@@ -150,16 +153,18 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE).
 
 一个基于 AI 的网页修仙互动小说游戏。
 
-玩家可以自定义昵称、性别和 AI 提供方，在浏览器中体验开放式修仙剧情。每次新开局都可以生成不同的背景、主线与开场选项，支持选项推进与自由输入混合交互，并提供本地存档与导出能力。
+玩家可以自定义昵称、性别和 AI 提供方，在浏览器中体验开放式修仙剧情。每次新开局都可以生成不同的背景与长期剧情方向，支持选项推进与自由输入混合交互，并提供本地存档、导出能力，以及围绕“主线脉络 / 当前目标”的双层剧情追踪。
 
 ## 项目亮点
 
-- 每局随机生成不同的开场背景与主线任务
+- 每局随机生成不同的开场背景与长期剧情方向
 - 支持“选项 + 自由输入”的混合互动方式
+- 支持独立剧情面板，区分“主线脉络”与“当前目标”
 - 支持浏览器本地存档、TXT 小说导出、JSON 存档导入导出
 - 支持自定义 AI Endpoint、模型获取、连接验证
 - 面向静态部署，适配 Vercel 与 Cloudflare Pages
 - API Key 仅在客户端本地使用，不经过本项目后端托管
+- 支持 AI 回复 Markdown 渲染
 
 ## 当前状态
 
@@ -167,8 +172,8 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE).
 
 当前重点方向：
 
-- 提升长对话下的剧情一致性
-- 增强世界状态、主线与线索的可视化
+- 提升长对话下的剧情一致性与长期叙事稳定性
+- 增强世界状态、剧情脉络、目标与线索的可视化
 - 继续打磨新手引导和存档体验
 - 完善文档、协作规范与发布节奏
 
@@ -181,7 +186,8 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE).
 3. 配置 AI Endpoint、API Key、模型
 4. 验证连接
 5. 进入游戏，接收本局独立生成的开场剧情
-6. 通过选项或自由输入推进故事
+6. 通过独立剧情面板查看“主线脉络”与“当前目标”
+7. 通过选项或自由输入推进故事
 
 ## 技术栈
 
@@ -245,7 +251,7 @@ npm run preview
 
 ## 存档说明
 
-- TXT 导出用于生成可阅读的小说文本
+- TXT 导出会按更接近网文阅读习惯的节奏分章，并自动生成轻量章节标题
 - JSON 导出用于完整保存结构化存档
 - JSON 导入可恢复历史进度
 

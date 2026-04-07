@@ -3,13 +3,14 @@
 ## Near Term
 
 - Stabilize first-run onboarding flow
-- Improve long-session narrative coherence
-- Surface current main quest, recent events, and discovered clues in the UI
+- Improve long-session narrative coherence around main story arcs and current objectives
+- Surface recent clues and discovered context alongside the new layered story tracker
 - Make save/load UX clearer for returning players
 
 ## Story Systems
 
 - Multi-arc quest progression
+- Better transition rules between long-term story arcs and short-term objectives
 - Better faction reactions and reputation tracking
 - More visible consequences from user actions
 - Dynamic supporting characters with stronger memory
