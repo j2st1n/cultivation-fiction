@@ -105,3 +105,33 @@ export function detectRealmUpgrade(text: string): string | null {
   }
   return null;
 }
+
+export function extractMainQuest(text: string): string {
+  const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
+  const patterns = [
+    /主线(?:任务|目标)[：:]\s*([^\n。！？]+)/,
+    /你的目标是([^\n。！？]+)/,
+    /你此行是为了([^\n。！？]+)/,
+    /你必须([^\n。！？]+)/,
+    /你决定([^\n。！？]+)/,
+    /当务之急是([^\n。！？]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = storyPart.match(pattern);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  const sentences = storyPart
+    .split(/(?<=[。！？])/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const questSentence = sentences.find((sentence) =>
+    /目标|寻找|查明|夺回|阻止|护送|调查|试炼|复仇|解开|进入|前往|拯救|追查/.test(sentence)
+  );
+
+  return questSentence || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。';
+}

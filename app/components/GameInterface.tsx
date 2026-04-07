@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractMainQuest } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
 const NICKNAMES = ['小二', '小三', '小四', '小五', '小六', '小七', '小八', '小九', '小十', '石头', '铁蛋', '柱子', '狗剩', '二狗', '三毛', '狗娃', '虎子', '牛儿', '娃子', '蛋蛋', '毛毛', '小毛', '阿福', '阿贵', '阿强', '阿旺', '阿根', '阿土', '阿水', '阿山', '阿林', '阿海', '阿江', '阿河', '阿湖', '阿海', '阿龙', '阿凤', '阿花', '阿草', '阿木', '阿石', '阿金', '阿银', '阿铜', '阿铁', '阿福', '阿禄', '阿寿', '阿喜', '阿庆', '阿发', '阿财', '阿顺', '阿平', '阿安', '阿和', '阿善', '阿美', '阿丽', '阿香', '阿花', '阿菊', '阿兰', '阿梅', '阿桃', '阿杏', '阿枣', '阿梨', '阿瓜', '阿豆', '阿米', '阿麦', '阿谷', '阿稻', '阿粮', '阿仓', '阿库', '阿房', '阿屋', '阿门', '阿窗', '阿床', '阿椅', '阿桌', '阿凳', '阿柜', '阿箱'];
@@ -68,6 +68,7 @@ function GameScreen() {
     isGenerating,
     storyProgress,
     updatePlayer,
+    updateWorld,
     advanceRealm,
     resetGame,
   } = useGameStore();
@@ -118,6 +119,7 @@ function GameScreen() {
         if (newRealm) {
           advanceRealm(newRealm as any);
         }
+        updateWorld({ currentMainQuest: extractMainQuest(text) });
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -575,7 +577,7 @@ function WorldPanel({
           <h3 className="text-cyan-400 font-bold mb-2">当前主线</h3>
           <div className="p-4 bg-slate-700/50 rounded-lg">
             <p className="text-slate-300 text-sm">
-              本局主线由 AI 在开场剧情中动态生成。请根据开场叙事与后续线索推进你的修仙之路。
+              {world.currentMainQuest || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。'}
             </p>
             <p className="text-slate-500 text-xs mt-2">
               不同开局会拥有不同背景、目标与因果。
