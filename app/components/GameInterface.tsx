@@ -293,10 +293,6 @@ export default function GameInterface() {
     });
   };
 
-  if (!isInitialized) {
-    return <SetupScreen />;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
       <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
