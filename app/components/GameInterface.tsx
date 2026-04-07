@@ -1009,7 +1009,7 @@ function SetupScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 100);
+    const timer = setTimeout(() => setLoading(false), 200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -1021,15 +1021,10 @@ function SetupScreen() {
     );
   }
 
-  const hasPlayer = !!player.name;
-  const hasApi = !!api.endpoint && isValidated;
-
-  if (hasPlayer && hasApi) {
+  // 首次访问或未配置：显示初始设置
+  // 只有已验证通过且有玩家名和API配置时才进入游戏
+  if (isValidated && api.endpoint && player.name) {
     return <GameInterface />;
-  }
-
-  if (hasPlayer && !hasApi) {
-    return <InitialSetup />;
   }
 
   return <InitialSetup />;
