@@ -127,6 +127,8 @@ That means:
 
 This project is moving toward lightweight semantic versioning.
 
+Current version: `0.2.0`
+
 Release notes will be tracked in [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
@@ -255,6 +257,8 @@ npm run preview
 ## 版本与发布
 
 项目正在逐步过渡到轻量语义化版本管理。
+
+当前版本：`0.2.0`
 
 更新记录见：[CHANGELOG.md](./CHANGELOG.md)
 

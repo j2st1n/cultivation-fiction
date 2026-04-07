@@ -13,6 +13,8 @@ Before submitting changes:
 npm run build
 ```
 
+This project uses Next.js 16. If you are changing framework-level behavior, confirm the current version's conventions before making architectural changes.
+
 ## Contribution Guidelines
 
 - Keep changes focused and easy to review
