@@ -7,7 +7,15 @@ import { streamChat } from '@/app/lib/ai';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractMainQuest } from '@/app/lib/story';
 import type { Message } from '@/app/types/game';
 
-const NICKNAMES = ['小二', '小三', '小四', '小五', '小六', '小七', '小八', '小九', '小十', '石头', '铁蛋', '柱子', '狗剩', '二狗', '三毛', '狗娃', '虎子', '牛儿', '娃子', '蛋蛋', '毛毛', '小毛', '阿福', '阿贵', '阿强', '阿旺', '阿根', '阿土', '阿水', '阿山', '阿林', '阿海', '阿江', '阿河', '阿湖', '阿海', '阿龙', '阿凤', '阿花', '阿草', '阿木', '阿石', '阿金', '阿银', '阿铜', '阿铁', '阿福', '阿禄', '阿寿', '阿喜', '阿庆', '阿发', '阿财', '阿顺', '阿平', '阿安', '阿和', '阿善', '阿美', '阿丽', '阿香', '阿花', '阿菊', '阿兰', '阿梅', '阿桃', '阿杏', '阿枣', '阿梨', '阿瓜', '阿豆', '阿米', '阿麦', '阿谷', '阿稻', '阿粮', '阿仓', '阿库', '阿房', '阿屋', '阿门', '阿窗', '阿床', '阿椅', '阿桌', '阿凳', '阿柜', '阿箱'];
+const MALE_PLAIN_NAMES = ['阿木', '阿石', '阿川', '阿山', '阿林', '阿河', '阿生', '阿顺', '阿安', '阿旺', '石头', '柱子', '虎子', '川子', '平安', '长生'];
+const FEMALE_PLAIN_NAMES = ['阿禾', '阿桃', '阿杏', '阿兰', '阿梅', '阿菊', '阿秋', '阿宁', '阿柔', '阿月', '小满', '春桃', '秋禾', '素娘', '阿芷', '阿音'];
+const NEUTRAL_PLAIN_NAMES = ['小满', '长风', '听雨', '云生', '知远', '清禾', '怀川', '归年', '青禾', '安宁'];
+const MALE_GIVEN_PREFIXES = ['知', '怀', '清', '长', '行', '景', '明', '承', '远', '云'];
+const MALE_GIVEN_SUFFIXES = ['远', '安', '川', '生', '舟', '山', '宁', '河', '松', '野'];
+const FEMALE_GIVEN_PREFIXES = ['清', '知', '青', '素', '听', '映', '扶', '明', '晚', '静'];
+const FEMALE_GIVEN_SUFFIXES = ['禾', '宁', '音', '月', '溪', '萝', '荷', '秋', '岚', '雪'];
+const NEUTRAL_GIVEN_PREFIXES = ['云', '归', '星', '望', '青', '知', '长', '听', '临', '照'];
+const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野', '歌', '生', '遥'];
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = 'https://img.bins.blog/2026/03/brand/j2-fish.png';
@@ -17,8 +25,29 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function generateRandomDaohao(): string {
-  return pickRandom(NICKNAMES);
+function generateComposedName(prefixes: string[], suffixes: string[]): string {
+  const prefix = pickRandom(prefixes);
+  const suffix = pickRandom(suffixes);
+  return prefix === suffix ? `${prefix}${pickRandom(suffixes)}` : `${prefix}${suffix}`;
+}
+
+function generateRandomName(gender: '男' | '女'): string {
+  const styleRoll = Math.random();
+
+  if (gender === '男') {
+    if (styleRoll < 0.55) return pickRandom(MALE_PLAIN_NAMES);
+    if (styleRoll < 0.85) return generateComposedName(MALE_GIVEN_PREFIXES, MALE_GIVEN_SUFFIXES);
+    return pickRandom(NEUTRAL_PLAIN_NAMES);
+  }
+
+  if (styleRoll < 0.55) return pickRandom(FEMALE_PLAIN_NAMES);
+  if (styleRoll < 0.85) return generateComposedName(FEMALE_GIVEN_PREFIXES, FEMALE_GIVEN_SUFFIXES);
+  return pickRandom(NEUTRAL_PLAIN_NAMES);
+}
+
+function generateInitialName(): string {
+  const defaultGender: '男' | '女' = Math.random() > 0.5 ? '男' : '女';
+  return generateRandomName(defaultGender);
 }
 
 function Typewriter({ text, onComplete }: { text: string; onComplete?: () => void }) {
@@ -1126,7 +1155,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const { updatePlayer } = useGameStore();
   const { api, updateApi, availableModels, fetchModels, setValidated, isValidated } = useSettingsStore();
   const [step, setStep] = useState<'name' | 'api'>(initialStep);
-  const [name, setName] = useState(generateRandomDaohao);
+  const [name, setName] = useState(generateInitialName);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -1145,7 +1174,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const handleRandomName = () => {
     const newGender = Math.random() > 0.5 ? '男' : '女';
     setGender(newGender);
-    setName(generateRandomDaohao());
+    setName(generateRandomName(newGender));
   };
 
   const handleValidate = async () => {
