@@ -5,8 +5,8 @@ import { Globe, Save, Settings } from 'lucide-react';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractMainQuest } from '@/app/lib/story';
-import type { Message } from '@/app/types/game';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractMainQuest, shouldAdvanceRealm, shouldUpdateMainQuest } from '@/app/lib/story';
+import type { CultivationRealm, Message } from '@/app/types/game';
 
 const MALE_PLAIN_NAMES = ['阿木', '阿石', '阿川', '阿山', '阿林', '阿河', '阿生', '阿顺', '阿安', '阿旺', '石头', '柱子', '虎子', '川子', '平安', '长生'];
 const FEMALE_PLAIN_NAMES = ['阿禾', '阿桃', '阿杏', '阿兰', '阿梅', '阿菊', '阿秋', '阿宁', '阿柔', '阿月', '小满', '春桃', '秋禾', '素娘', '阿芷', '阿音'];
@@ -101,6 +101,8 @@ function GitHubIconLink({ className = '' }: { className?: string }) {
 }
 
 function BlogIconLink({ className = '' }: { className?: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
     <a
       href={BLOG_URL}
@@ -110,11 +112,16 @@ function BlogIconLink({ className = '' }: { className?: string }) {
       title="bins.blog"
       className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
     >
-      <img
-        src={BLOG_ICON_URL}
-        alt="bins.blog"
-        className="h-5 w-5 rounded-sm"
-      />
+      {imageFailed ? (
+        <span className="text-xs font-semibold tracking-wide">B</span>
+      ) : (
+        <img
+          src={BLOG_ICON_URL}
+          alt="bins.blog"
+          className="h-5 w-5 rounded-sm"
+          onError={() => setImageFailed(true)}
+        />
+      )}
     </a>
   );
 }
@@ -139,6 +146,30 @@ function HeaderIconButton({
       {children}
     </button>
   );
+}
+
+function applyResponseStateUpdates({
+  text,
+  currentRealm,
+  currentMainQuest,
+  advanceRealm,
+  updateWorld,
+}: {
+  text: string;
+  currentRealm: CultivationRealm;
+  currentMainQuest: string;
+  advanceRealm: (newRealm: import('@/app/types/game').CultivationRealm) => void;
+  updateWorld: (updates: Partial<import('@/app/types/game').WorldState>) => void;
+}) {
+  const nextRealm = detectRealmUpgrade(text);
+  if (shouldAdvanceRealm(currentRealm, nextRealm)) {
+    advanceRealm(nextRealm);
+  }
+
+  const nextQuest = extractMainQuest(text);
+  if (shouldUpdateMainQuest(nextQuest, currentMainQuest)) {
+    updateWorld({ currentMainQuest: nextQuest });
+  }
 }
 
 export default function GameInterface() {
@@ -210,11 +241,13 @@ function GameScreen() {
         fullResponse += chunk;
       },
       onComplete: (text) => {
-        const newRealm = detectRealmUpgrade(text);
-        if (newRealm) {
-          advanceRealm(newRealm as any);
-        }
-        updateWorld({ currentMainQuest: extractMainQuest(text) });
+        applyResponseStateUpdates({
+          text,
+          currentRealm: player.realm,
+          currentMainQuest: world.currentMainQuest,
+          advanceRealm,
+          updateWorld,
+        });
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -275,10 +308,13 @@ function GameScreen() {
         fullResponse += chunk;
       },
       onComplete: (text) => {
-        const newRealm = detectRealmUpgrade(text);
-        if (newRealm) {
-          advanceRealm(newRealm as any);
-        }
+        applyResponseStateUpdates({
+          text,
+          currentRealm: player.realm,
+          currentMainQuest: world.currentMainQuest,
+          advanceRealm,
+          updateWorld,
+        });
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -322,10 +358,13 @@ function GameScreen() {
     await streamChat([systemMessage, ...messages], {
       onChunk: (chunk) => setCurrentText(prev => prev + chunk),
       onComplete: (text) => {
-        const newRealm = detectRealmUpgrade(text);
-        if (newRealm) {
-          advanceRealm(newRealm as any);
-        }
+        applyResponseStateUpdates({
+          text,
+          currentRealm: player.realm,
+          currentMainQuest: world.currentMainQuest,
+          advanceRealm,
+          updateWorld,
+        });
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',
@@ -382,10 +421,13 @@ function GameScreen() {
         setCurrentText(prev => prev + chunk);
       },
       onComplete: (text) => {
-        const newRealm = detectRealmUpgrade(text);
-        if (newRealm) {
-          advanceRealm(newRealm as any);
-        }
+        applyResponseStateUpdates({
+          text,
+          currentRealm: player.realm,
+          currentMainQuest: world.currentMainQuest,
+          advanceRealm,
+          updateWorld,
+        });
         const aiMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'assistant',

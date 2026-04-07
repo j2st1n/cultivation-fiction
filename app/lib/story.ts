@@ -1,4 +1,4 @@
-import type { Message, Character } from '../types/game';
+import type { Message, Character, CultivationRealm } from '../types/game';
 
 export const INITIAL_STORY = `请为玩家生成一次全新的修仙开场。
 
@@ -88,18 +88,23 @@ export function checkRequiresInput(text: string): boolean {
   return text.includes('【自由输入】') || text.includes('请描述你的行动');
 }
 
-export function detectRealmUpgrade(text: string): string | null {
-  const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期'];
+export function detectRealmUpgrade(text: string): CultivationRealm | null {
+  const realmOrder: CultivationRealm[] = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期'];
   
   for (let i = 0; i < realmOrder.length; i++) {
     const realm = realmOrder[i];
     if (text.includes(`突破到${realm}`) || 
+        text.includes(`突破至${realm}`) ||
         text.includes(`晋升${realm}`) || 
         text.includes(`进阶${realm}`) ||
         text.includes(`达到${realm}`) ||
         text.includes(`迈入${realm}`) ||
+        text.includes(`踏入${realm}`) ||
+        text.includes(`晋入${realm}`) ||
         new RegExp(`晋级.*${realm}`).test(text) ||
-        new RegExp(`突破.*${realm}`).test(text)) {
+        new RegExp(`突破.*${realm}`).test(text) ||
+        new RegExp(`踏入.*${realm}`).test(text) ||
+        new RegExp(`迈入.*${realm}`).test(text)) {
       return realm;
     }
   }
@@ -115,6 +120,11 @@ export function extractMainQuest(text: string): string {
     /你必须([^\n。！？]+)/,
     /你决定([^\n。！？]+)/,
     /当务之急是([^\n。！？]+)/,
+    /接下来需要([^\n。！？]+)/,
+    /下一步要做的是([^\n。！？]+)/,
+    /眼下最重要的是([^\n。！？]+)/,
+    /你准备([^\n。！？]+)/,
+    /你需要前往([^\n。！？]+)/,
   ];
 
   for (const pattern of patterns) {
@@ -134,4 +144,18 @@ export function extractMainQuest(text: string): string {
   );
 
   return questSentence || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。';
+}
+
+export function shouldUpdateMainQuest(nextQuest: string, currentQuest: string): boolean {
+  if (!nextQuest.trim()) return false;
+  if (!currentQuest.trim()) return true;
+  if (nextQuest === currentQuest) return false;
+  if (nextQuest.includes('本局主线正在展开')) return false;
+  return nextQuest.length >= 6;
+}
+
+export function shouldAdvanceRealm(currentRealm: CultivationRealm, nextRealm: CultivationRealm | null): nextRealm is CultivationRealm {
+  if (!nextRealm) return false;
+  const realmOrder: CultivationRealm[] = ['凡人', '练气期', '筑基期', '金丹期', '元婴期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期'];
+  return realmOrder.indexOf(nextRealm) > realmOrder.indexOf(currentRealm);
 }
