@@ -114,6 +114,7 @@ export function detectRealmUpgrade(text: string): CultivationRealm | null {
 export function extractMainQuest(text: string): string {
   const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
   const patterns = [
+    /当前(?:主线|任务|目标)[：:]\s*([^\n。！？]+)/,
     /主线(?:任务|目标)[：:]\s*([^\n。！？]+)/,
     /你的目标是([^\n。！？]+)/,
     /你此行是为了([^\n。！？]+)/,
@@ -123,6 +124,11 @@ export function extractMainQuest(text: string): string {
     /接下来需要([^\n。！？]+)/,
     /下一步要做的是([^\n。！？]+)/,
     /眼下最重要的是([^\n。！？]+)/,
+    /如今最重要的是([^\n。！？]+)/,
+    /你眼下要做的是([^\n。！？]+)/,
+    /此行的目的在于([^\n。！？]+)/,
+    /你的当务之急是([^\n。！？]+)/,
+    /你接下来要([^\n。！？]+)/,
     /你准备([^\n。！？]+)/,
     /你需要前往([^\n。！？]+)/,
   ];
@@ -140,7 +146,7 @@ export function extractMainQuest(text: string): string {
     .filter(Boolean);
 
   const questSentence = sentences.find((sentence) =>
-    /目标|寻找|查明|夺回|阻止|护送|调查|试炼|复仇|解开|进入|前往|拯救|追查/.test(sentence)
+    /目标|寻找|查明|夺回|阻止|护送|调查|试炼|复仇|解开|进入|前往|拯救|追查|赶往|设法|尽快|打探|弄清|完成|取得|拜入|逃离|营救/.test(sentence)
   );
 
   return questSentence || '本局主线正在展开，更多线索会在剧情推进中逐步浮现。';
@@ -151,7 +157,9 @@ export function shouldUpdateMainQuest(nextQuest: string, currentQuest: string): 
   if (!currentQuest.trim()) return true;
   if (nextQuest === currentQuest) return false;
   if (nextQuest.includes('本局主线正在展开')) return false;
-  return nextQuest.length >= 6;
+  if (nextQuest.length < 6) return false;
+  if (currentQuest.includes(nextQuest)) return false;
+  return true;
 }
 
 export function shouldAdvanceRealm(currentRealm: CultivationRealm, nextRealm: CultivationRealm | null): nextRealm is CultivationRealm {
