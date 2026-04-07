@@ -29,7 +29,8 @@ export interface PlayerAttributes {
 export interface WorldState {
   currentLocation: string;
   currentScene: string;
-  currentMainQuest: string;
+  mainStoryArc: string;
+  currentObjective: string;
   visitedLocations: string[];
   metCharacters: string[];
   plotFlags: Record<string, boolean>;

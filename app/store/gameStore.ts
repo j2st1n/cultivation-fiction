@@ -39,7 +39,8 @@ const INITIAL_PLAYER: PlayerAttributes = {
 const INITIAL_WORLD: WorldState = {
   currentLocation: '青云镇',
   currentScene: 'start',
-  currentMainQuest: '',
+  mainStoryArc: '',
+  currentObjective: '',
   visitedLocations: ['青云镇'],
   metCharacters: [],
   plotFlags: {},
