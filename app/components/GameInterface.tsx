@@ -98,7 +98,7 @@ function GameScreen() {
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
       role: 'user',
-      content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${world.currentLocation}。请以这段文字开头继续叙事：\n\n${INITIAL_STORY}`,
+      content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${world.currentLocation}。请根据以下要求直接生成本次独立开局：\n\n${INITIAL_STORY}`,
       timestamp: Date.now(),
     };
     
@@ -572,13 +572,13 @@ function WorldPanel({
         </div>
 
         <div className="mb-6">
-          <h3 className="text-cyan-400 font-bold mb-2">主线任务</h3>
+          <h3 className="text-cyan-400 font-bold mb-2">当前主线</h3>
           <div className="p-4 bg-slate-700/50 rounded-lg">
             <p className="text-slate-300 text-sm">
-              父亲曾是修士，后失踪。爷爷临终遗愿：找出父亲下落。
+              本局主线由 AI 在开场剧情中动态生成。请根据开场叙事与后续线索推进你的修仙之路。
             </p>
             <p className="text-slate-500 text-xs mt-2">
-              未知父亲下落前，修仙之路永不止步...
+              不同开局会拥有不同背景、目标与因果。
             </p>
           </div>
         </div>
