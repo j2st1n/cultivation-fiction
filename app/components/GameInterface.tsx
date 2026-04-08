@@ -446,10 +446,10 @@ function GameScreen() {
   }, []);
 
   useEffect(() => {
-    if (isGenerating || isNearBottom) {
+    if (isNearBottom) {
       bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [messages, currentText, choices, isGenerating, isNearBottom]);
+  }, [messages, currentText, choices, isNearBottom]);
 
   const scrollToTop = () => {
     topAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
