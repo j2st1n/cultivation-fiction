@@ -6,6 +6,12 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-07
+
+### Changed
+- Story-state metadata is now emitted in a hidden structured block and shown only inside the 剧情 panel
+- Mobile header layout now preserves a horizontal 修仙世界 title and wraps controls more cleanly on small screens
+
 ## [0.3.0] - 2026-04-07
 
 ### Added
