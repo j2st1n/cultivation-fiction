@@ -1049,7 +1049,7 @@ function GameScreen() {
       {showScrollButtons && (
         <div
           ref={scrollControlsRef}
-          className={`fixed bottom-36 right-3 z-30 flex touch-none flex-col gap-1.5 transition-all duration-300 sm:bottom-6 sm:right-6 sm:gap-2 ${showScrollControlsOverlay ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
+          className={`fixed bottom-36 right-3 z-30 flex touch-none flex-col gap-1.5 transition-all duration-300 sm:hidden ${showScrollControlsOverlay ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
           style={{ transform: `translate(${scrollButtonOffset.x}px, ${scrollButtonOffset.y}px)` }}
           onPointerDown={handleScrollControlsPointerDown}
           onPointerMove={handleScrollControlsPointerMove}
