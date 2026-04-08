@@ -151,7 +151,22 @@ export function composeLocationLabel(region?: string, area?: string, location?: 
 }
 
 export function getCoarseLocationLabel(region?: string, area?: string, location?: string): string {
-  return region || area || location || '';
+  const candidate = region || area || location || '';
+  if (!candidate) return '';
+
+  const coarsePatterns = [
+    /(.*?)(东侧|西侧|南侧|北侧|外围|外侧|外缘|深处|入口|出口|镇中|村口|村外|岭中|谷口|林缘|岸边|附近|一带|周边)$/,
+    /(.*?)(演武场|传功堂|集市|石阶|野岭|山道|密林|外门|内门|秘境入口)$/,
+  ];
+
+  for (const pattern of coarsePatterns) {
+    const match = candidate.match(pattern);
+    if (match?.[1]?.trim()) {
+      return match[1].trim();
+    }
+  }
+
+  return candidate;
 }
 
 export function extractLocationState(text: string): { currentRegion: string; currentArea: string; currentLocation: string } {

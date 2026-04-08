@@ -7,6 +7,7 @@ import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { validateApiConfiguration } from '@/app/lib/apiConfig';
+import { VersionTag } from '@/app/components/VersionTag';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, composeLocationLabel, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractLocationState, extractMainStoryArc, extractRealmStage, extractRecentProgress, getCoarseLocationLabel, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateLocationField, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
@@ -23,7 +24,6 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.5.5';
 const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
@@ -870,7 +870,7 @@ function GameScreen() {
               修仙世界
             </h1>
             <div className="flex items-center gap-2">
-              <span className={`text-xs ${theme.subtle}`}>v{APP_VERSION}</span>
+              <VersionTag className={`text-xs ${theme.subtle}`} />
               <BlogIconLink className="px-1" />
               <GitHubIconLink className="px-1" />
             </div>
@@ -904,7 +904,7 @@ function GameScreen() {
               修仙世界
             </h1>
             <div className="flex items-center gap-3 text-sm">
-              <span className={`text-xs ${theme.subtle}`}>v{APP_VERSION}</span>
+              <VersionTag className={`text-xs ${theme.subtle}`} />
               <BlogIconLink className="px-1" />
               <GitHubIconLink className="px-1" />
               <span className={`max-w-[7rem] truncate ${theme.name}`}>{player.name}</span>
@@ -1910,7 +1910,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
     <div className={`min-h-screen flex items-center justify-center p-4 ${theme.app}`}>
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
-          <div className={`mb-2 text-xs ${theme.subtle}`}>v{APP_VERSION}</div>
+      <VersionTag className={`mb-2 text-xs ${theme.subtle}`} />
           <div className="flex items-center justify-center gap-3">
             <BlogIconLink className={`h-10 w-10 rounded-full ${theme.iconButton}`} />
             <GitHubIconLink className={`h-10 w-10 rounded-full ${theme.iconButton}`} />
