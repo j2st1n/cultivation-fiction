@@ -6,6 +6,14 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-07
+
+### Added
+- Three persisted reading themes: 夜幕, 青竹, and 纸卷
+
+### Changed
+- Main reading surfaces, panels, and setup flow now follow the selected reading theme for a more comfortable long-session experience
+
 ## [0.3.2] - 2026-04-07
 
 ### Changed

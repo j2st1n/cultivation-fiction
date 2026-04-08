@@ -17,6 +17,7 @@ Players can start a new run with a custom name, gender, and AI provider, then ex
 - Dynamic AI-generated opening background and long-term story direction for each new run
 - Mixed interaction mode with structured choices and free input
 - Dedicated 剧情 panel with separate 主线脉络 and 当前目标
+- Three reading themes optimized for long-form reading: 夜幕, 青竹, and 纸卷
 - In-browser save system with TXT novel export and JSON save import/export
 - Configurable AI endpoint, model selection, model fetch, and connection validation
 - Static deployment target for Vercel and Cloudflare Pages
@@ -43,8 +44,9 @@ See [ROADMAP.md](./ROADMAP.md) for planned work.
 3. Configure your AI endpoint, API key, and model
 4. Validate the connection
 5. Enter the game and receive a unique AI-generated opening
-6. Follow 主线脉络 and 当前目标 in the dedicated 剧情 panel
-7. Progress using options or your own custom actions
+6. Pick your preferred reading theme in settings if needed
+7. Follow 主线脉络 and 当前目标 in the dedicated 剧情 panel
+8. Progress using options or your own custom actions
 
 ## Stack
 
@@ -133,7 +135,7 @@ That means:
 
 This project is moving toward lightweight semantic versioning.
 
-Current version: `0.3.2`
+Current version: `0.4.0`
 
 Release notes will be tracked in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -160,6 +162,7 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE).
 - 每局随机生成不同的开场背景与长期剧情方向
 - 支持“选项 + 自由输入”的混合互动方式
 - 支持独立剧情面板，区分“主线脉络”与“当前目标”
+- 支持三种阅读主题：夜幕、青竹、纸卷
 - 支持浏览器本地存档、TXT 小说导出、JSON 存档导入导出
 - 支持自定义 AI Endpoint、模型获取、连接验证
 - 面向静态部署，适配 Vercel 与 Cloudflare Pages
@@ -186,8 +189,9 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE).
 3. 配置 AI Endpoint、API Key、模型
 4. 验证连接
 5. 进入游戏，接收本局独立生成的开场剧情
-6. 通过独立剧情面板查看“主线脉络”与“当前目标”
-7. 通过选项或自由输入推进故事
+6. 如有需要，可在设置中切换阅读主题
+7. 通过独立剧情面板查看“主线脉络”与“当前目标”
+8. 通过选项或自由输入推进故事
 
 ## 技术栈
 
@@ -276,7 +280,7 @@ npm run preview
 
 项目正在逐步过渡到轻量语义化版本管理。
 
-当前版本：`0.3.2`
+当前版本：`0.4.0`
 
 更新记录见：[CHANGELOG.md](./CHANGELOG.md)
 
