@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractMainStoryArc, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateStoryArc, stripStoryStateBlock } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
+import type { ReadingTheme } from '@/app/store/settingsStore';
 
 const MALE_PLAIN_NAMES = ['阿木', '阿石', '阿川', '阿山', '阿林', '阿河', '阿生', '阿顺', '阿安', '阿旺', '石头', '柱子', '虎子', '川子', '平安', '长生'];
 const FEMALE_PLAIN_NAMES = ['阿禾', '阿桃', '阿杏', '阿兰', '阿梅', '阿菊', '阿秋', '阿宁', '阿柔', '阿月', '小满', '春桃', '秋禾', '素娘', '阿芷', '阿音'];
@@ -21,7 +22,89 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.3.2';
+const APP_VERSION = '0.4.0';
+
+const THEME_STYLES: Record<ReadingTheme, {
+  app: string;
+  header: string;
+  title: string;
+  subtle: string;
+  name: string;
+  realm: string;
+  iconButton: string;
+  assistantCard: string;
+  userCard: string;
+  streamingCard: string;
+  choiceButton: string;
+  input: string;
+  primaryButton: string;
+  modal: string;
+  panel: string;
+  panelText: string;
+  panelSubtle: string;
+  markdown: string;
+}> = {
+  night: {
+    app: 'bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100',
+    header: 'border-b border-slate-700/50 bg-slate-900/50',
+    title: 'from-cyan-400 to-purple-400',
+    subtle: 'text-slate-500',
+    name: 'text-slate-400',
+    realm: 'bg-purple-900/50 text-purple-300',
+    iconButton: 'border border-slate-700/70 bg-slate-800/40 text-slate-400 hover:border-slate-500 hover:text-slate-100',
+    assistantCard: 'bg-slate-800/50 border border-slate-700/50 text-slate-200',
+    userCard: 'bg-slate-700/30 text-slate-300',
+    streamingCard: 'bg-slate-800/50 border border-slate-700/50 text-slate-200',
+    choiceButton: 'bg-slate-800/80 border border-slate-600 hover:border-cyan-500/50 hover:bg-slate-700/80',
+    input: 'bg-slate-700 border-slate-500 text-white placeholder:text-slate-400 focus:border-cyan-500',
+    primaryButton: 'bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white',
+    modal: 'bg-black/50',
+    panel: 'bg-slate-800 border border-slate-600',
+    panelText: 'text-slate-200',
+    panelSubtle: 'text-slate-500',
+    markdown: 'prose-invert prose-strong:text-slate-100 prose-headings:text-slate-100',
+  },
+  bamboo: {
+    app: 'bg-gradient-to-b from-[#18231d] to-[#24332a] text-[#e7f0e5]',
+    header: 'border-b border-[#415846]/50 bg-[#18231d]/75',
+    title: 'from-[#b7d99c] to-[#7fb38a]',
+    subtle: 'text-[#91a793]',
+    name: 'text-[#b8c8b5]',
+    realm: 'bg-[#375143]/70 text-[#d0e6cc]',
+    iconButton: 'border border-[#405644]/70 bg-[#223127]/70 text-[#aac1ad] hover:border-[#8fb38d] hover:text-[#eff7eb]',
+    assistantCard: 'bg-[#223127]/75 border border-[#405644]/55 text-[#eef5ea]',
+    userCard: 'bg-[#304236]/45 text-[#d4dfd0]',
+    streamingCard: 'bg-[#223127]/75 border border-[#405644]/55 text-[#eef5ea]',
+    choiceButton: 'bg-[#223127]/85 border border-[#415846] hover:border-[#9ac494] hover:bg-[#2b3d31]',
+    input: 'bg-[#223127] border-[#49604d] text-[#edf6ea] placeholder:text-[#93a897] focus:border-[#a9cd9f]',
+    primaryButton: 'bg-gradient-to-r from-[#4b7a56] to-[#6ea16c] hover:from-[#56875f] hover:to-[#7fb77a] text-white',
+    modal: 'bg-black/45',
+    panel: 'bg-[#223127] border border-[#49604d]',
+    panelText: 'text-[#eef5ea]',
+    panelSubtle: 'text-[#93a897]',
+    markdown: 'prose-invert prose-strong:text-[#f3faef] prose-headings:text-[#f3faef]',
+  },
+  paper: {
+    app: 'bg-gradient-to-b from-[#f1e8d6] to-[#e5d8bf] text-[#3f3427]',
+    header: 'border-b border-[#c9b99e]/70 bg-[#f5ecd9]/85',
+    title: 'from-[#70583a] to-[#a27a45]',
+    subtle: 'text-[#8b7a63]',
+    name: 'text-[#5f503d]',
+    realm: 'bg-[#d8c5a0]/80 text-[#654e2d]',
+    iconButton: 'border border-[#ccb998] bg-[#f8f1e3]/80 text-[#6a5a46] hover:border-[#9a7d52] hover:text-[#3d3022]',
+    assistantCard: 'bg-[#f7f0e2]/90 border border-[#d4c1a0]/70 text-[#3d3125]',
+    userCard: 'bg-[#eadcc3]/65 text-[#5d503f]',
+    streamingCard: 'bg-[#f7f0e2]/90 border border-[#d4c1a0]/70 text-[#3d3125]',
+    choiceButton: 'bg-[#f8f1e4]/90 border border-[#d0bb97] hover:border-[#a78757] hover:bg-[#efe4ca]',
+    input: 'bg-[#faf5e9] border-[#ccb791] text-[#3d3125] placeholder:text-[#8a775f] focus:border-[#a88754]',
+    primaryButton: 'bg-gradient-to-r from-[#9a7745] to-[#bf9a67] hover:from-[#a98450] hover:to-[#cfa672] text-white',
+    modal: 'bg-[#2b241c]/35',
+    panel: 'bg-[#f7f0e2] border border-[#d2be9b]',
+    panelText: 'text-[#3d3125]',
+    panelSubtle: 'text-[#8a775f]',
+    markdown: 'prose prose-slate prose-strong:text-[#3d3125] prose-headings:text-[#3d3125]',
+  },
+};
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -123,16 +206,18 @@ function BlogIconLink({ className = '' }: { className?: string }) {
 function HeaderIconButton({
   title,
   onClick,
+  themeClass,
   children,
 }: {
   title: string;
   onClick: () => void;
+  themeClass: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700/70 bg-slate-800/40 text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-100"
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${themeClass}`}
       title={title}
       aria-label={title}
       type="button"
@@ -145,6 +230,14 @@ function HeaderIconButton({
 function StoryMarkdown({ content }: { content: string }) {
   return (
     <div className="prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-strong:text-slate-100 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:text-slate-100">
+      <ReactMarkdown>{content}</ReactMarkdown>
+    </div>
+  );
+}
+
+function ThemedStoryMarkdown({ content, themeClass }: { content: string; themeClass: string }) {
+  return (
+    <div className={`prose max-w-none prose-p:my-2 prose-p:leading-relaxed prose-ul:my-2 prose-ol:my-2 prose-li:my-1 ${themeClass}`}>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );
@@ -216,7 +309,8 @@ function GameScreen() {
     resetGame,
   } = useGameStore();
   
-  const { api, isValidated } = useSettingsStore();
+  const { api, isValidated, readingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
@@ -472,15 +566,15 @@ function GameScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
-      <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+    <div className={`min-h-screen ${theme.app}`}>
+      <header className={`backdrop-blur-sm sticky top-0 z-10 ${theme.header}`}>
         <div className="max-w-4xl mx-auto px-4 py-3 space-y-3 sm:space-y-0">
           <div className="flex items-center justify-between gap-3 sm:hidden">
-            <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            <h1 className={`shrink-0 whitespace-nowrap text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r ${theme.title}`}>
               修仙世界
             </h1>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">v{APP_VERSION}</span>
+              <span className={`text-xs ${theme.subtle}`}>v{APP_VERSION}</span>
               <BlogIconLink className="px-1" />
               <GitHubIconLink className="px-1" />
             </div>
@@ -488,49 +582,49 @@ function GameScreen() {
 
           <div className="flex items-center justify-between gap-3 sm:hidden">
             <div className="flex min-w-0 items-center gap-2 text-sm">
-              <span className="max-w-[7rem] truncate text-slate-400">{player.name}</span>
-              <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300 whitespace-nowrap text-xs">
+              <span className={`max-w-[7rem] truncate ${theme.name}`}>{player.name}</span>
+              <span className={`px-2 py-1 rounded whitespace-nowrap text-xs ${theme.realm}`}>
                 {player.realm}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
+              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)} themeClass={theme.iconButton}>
                 <BookOpen size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
+              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)} themeClass={theme.iconButton}>
                 <Globe size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
+              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
                 <Settings size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
+              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)} themeClass={theme.iconButton}>
                 <Save size={18} strokeWidth={1.5} />
               </HeaderIconButton>
             </div>
           </div>
 
           <div className="hidden sm:flex sm:items-center sm:justify-between sm:gap-3">
-            <h1 className="shrink-0 whitespace-nowrap text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            <h1 className={`shrink-0 whitespace-nowrap text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${theme.title}`}>
               修仙世界
             </h1>
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-xs text-slate-500">v{APP_VERSION}</span>
+              <span className={`text-xs ${theme.subtle}`}>v{APP_VERSION}</span>
               <BlogIconLink className="px-1" />
               <GitHubIconLink className="px-1" />
-              <span className="max-w-[7rem] truncate text-slate-400">{player.name}</span>
-              <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300 whitespace-nowrap">
+              <span className={`max-w-[7rem] truncate ${theme.name}`}>{player.name}</span>
+              <span className={`px-2 py-1 rounded whitespace-nowrap ${theme.realm}`}>
                 {player.realm}
               </span>
-              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
+              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)} themeClass={theme.iconButton}>
                 <BookOpen size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
+              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)} themeClass={theme.iconButton}>
                 <Globe size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
+              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
                 <Settings size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
+              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)} themeClass={theme.iconButton}>
                 <Save size={18} strokeWidth={1.5} />
               </HeaderIconButton>
             </div>
@@ -572,14 +666,10 @@ function GameScreen() {
           {messages.map((msg) => (
             <div 
               key={msg.id}
-              className={`p-4 rounded-lg whitespace-pre-wrap ${
-                msg.role === 'assistant' 
-                  ? 'bg-slate-800/50 border border-slate-700/50 text-slate-200' 
-                  : 'bg-slate-700/30 ml-8 text-slate-300 italic'
-              }`}
+              className={`p-4 rounded-lg whitespace-pre-wrap ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-8 italic`}`}
             >
               {msg.role === 'assistant' ? (
-                <StoryMarkdown content={msg.content} />
+                <ThemedStoryMarkdown content={msg.content} themeClass={theme.markdown} />
               ) : (
                 <p>{msg.content}</p>
               )}
@@ -587,7 +677,7 @@ function GameScreen() {
           ))}
           
           {currentText && (
-            <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-200">
+            <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
               <div className="leading-relaxed whitespace-pre-wrap">{currentText}</div>
             </div>
           )}
@@ -622,7 +712,7 @@ function GameScreen() {
               <button
                 key={index}
                 onClick={() => handleChoice(choice)}
-                className="w-full text-left p-3 rounded-lg bg-slate-800/80 border border-slate-600 hover:border-cyan-500/50 hover:bg-slate-700/80 transition-all"
+                className={`w-full text-left p-3 rounded-lg transition-all ${theme.choiceButton}`}
               >
                 <span className="text-cyan-400 mr-2">
                   {String.fromCharCode(65 + index)}:
@@ -641,12 +731,12 @@ function GameScreen() {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleFreeInput()}
               placeholder={requiresInput ? "请描述你的行动..." : "自由行动或自定义输入..."}
-              className="flex-1 px-4 py-3 bg-slate-700 border-2 border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+              className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none ${theme.input}`}
             />
             <button
               onClick={handleFreeInput}
               disabled={!inputText.trim() && choices.length > 0}
-              className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all text-white font-medium disabled:opacity-50"
+              className={`px-6 py-2 rounded-lg transition-all font-medium disabled:opacity-50 ${theme.primaryButton}`}
             >
               确认
             </button>
@@ -692,47 +782,49 @@ function WorldPanel({
   world: any; 
   storyProgress: number; 
 }) {
+  const { readingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   const currentRealm = REALMS.find(r => r.name === player.realm);
   const realmIndex = REALMS.findIndex(r => r.name === player.realm);
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
+      <div className={`rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-200">世界观与进度</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>世界观与进度</h2>
+          <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
         <div className="mb-6">
           <h3 className="text-cyan-400 font-bold mb-2">角色信息</h3>
-          <div className="bg-slate-700/50 rounded-lg p-4 space-y-2 text-sm">
+          <div className={`rounded-lg p-4 space-y-2 text-sm ${theme.streamingCard}`}>
             <div className="flex justify-between">
-              <span className="text-slate-400">道号</span>
-              <span className="text-slate-200">{player.name}</span>
+              <span className={theme.panelSubtle}>道号</span>
+              <span className={theme.panelText}>{player.name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">性别</span>
-              <span className="text-slate-200">{player.gender}</span>
+              <span className={theme.panelSubtle}>性别</span>
+              <span className={theme.panelText}>{player.gender}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">境界</span>
+              <span className={theme.panelSubtle}>境界</span>
               <span className="text-purple-300">{player.realm}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">年龄</span>
-              <span className="text-slate-200">{player.age}岁</span>
+              <span className={theme.panelSubtle}>年龄</span>
+              <span className={theme.panelText}>{player.age}岁</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">当前地点</span>
-              <span className="text-slate-200">{world.currentLocation}</span>
+              <span className={theme.panelSubtle}>当前地点</span>
+              <span className={theme.panelText}>{world.currentLocation}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">已访问</span>
-              <span className="text-slate-200">{world.visitedLocations.length}处</span>
+              <span className={theme.panelSubtle}>已访问</span>
+              <span className={theme.panelText}>{world.visitedLocations.length}处</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">剧情进度</span>
-              <span className="text-slate-200">{storyProgress}</span>
+              <span className={theme.panelSubtle}>剧情进度</span>
+              <span className={theme.panelText}>{storyProgress}</span>
             </div>
           </div>
         </div>
@@ -747,12 +839,12 @@ function WorldPanel({
                   idx === realmIndex 
                     ? 'bg-purple-900/50 border border-purple-500' 
                     : idx < realmIndex 
-                      ? 'bg-slate-700/30 text-slate-500 line-through'
-                      : 'bg-slate-700/30 text-slate-400'
+                      ? `${theme.userCard} line-through`
+                      : `${theme.userCard}`
                 }`}
               >
                 <div className="font-medium">{realm.name}</div>
-                <div className="text-xs text-slate-500">{realm.desc}</div>
+                <div className={`text-xs ${theme.panelSubtle}`}>{realm.desc}</div>
               </div>
             ))}
           </div>
@@ -762,9 +854,9 @@ function WorldPanel({
           <h3 className="text-cyan-400 font-bold mb-2">修仙界势力</h3>
           <div className="space-y-2">
             {FACTIONS.map(faction => (
-              <div key={faction.name} className="p-3 bg-slate-700/30 rounded-lg">
-                <div className="font-medium text-slate-200">{faction.name}</div>
-                <div className="text-xs text-slate-500">{faction.desc}</div>
+              <div key={faction.name} className={`p-3 rounded-lg ${theme.userCard}`}>
+                <div className={`font-medium ${theme.panelText}`}>{faction.name}</div>
+                <div className={`text-xs ${theme.panelSubtle}`}>{faction.desc}</div>
               </div>
             ))}
           </div>
@@ -781,18 +873,20 @@ function StoryPanel({
   onClose: () => void;
   world: import('@/app/types/game').WorldState;
 }) {
+  const { readingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
+      <div className={`rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-200">剧情脉络</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>剧情脉络</h2>
+          <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
         <div className="mb-6">
           <h3 className="text-cyan-400 font-bold mb-2">主线脉络</h3>
-          <div className="p-4 bg-slate-700/50 rounded-lg">
-            <p className="text-slate-300 text-sm leading-relaxed">
+          <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
+            <p className={`text-sm leading-relaxed ${theme.panelText}`}>
               {world.mainStoryArc || '本局主线脉络正在展开，更多核心矛盾会随着剧情推进浮现。'}
             </p>
           </div>
@@ -800,14 +894,14 @@ function StoryPanel({
 
         <div className="mb-2">
           <h3 className="text-cyan-400 font-bold mb-2">当前目标</h3>
-          <div className="p-4 bg-slate-700/50 rounded-lg">
-            <p className="text-slate-300 text-sm leading-relaxed">
+          <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
+            <p className={`text-sm leading-relaxed ${theme.panelText}`}>
               {world.currentObjective || '当前目标正在更新，新的行动方向会随着剧情推进明确。'}
             </p>
           </div>
         </div>
 
-        <p className="mt-3 text-xs text-slate-500">
+        <p className={`mt-3 text-xs ${theme.panelSubtle}`}>
           主线脉络负责保持长期一致性，当前目标用于追踪眼下该做什么。
         </p>
       </div>
@@ -816,6 +910,8 @@ function StoryPanel({
 }
 
 function SavePanel({ onClose }: { onClose: () => void }) {
+  const { readingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   const { saveSlots, addSaveSlot, removeSaveSlot, saveGame, loadGame } = useGameStore();
   const [saveName, setSaveName] = useState('');
   const [exportType, setExportType] = useState<'txt' | 'json'>('txt');
@@ -908,11 +1004,11 @@ function SavePanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-md">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
+      <div className={`rounded-xl p-6 w-full max-w-md ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-200">存档管理</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>存档管理</h2>
+          <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -921,18 +1017,18 @@ function SavePanel({ onClose }: { onClose: () => void }) {
             value={saveName}
             onChange={(e) => setSaveName(e.target.value)}
             placeholder="存档名称..."
-            className="flex-1 px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+            className={`flex-1 px-3 py-2 border rounded-lg ${theme.input}`}
           />
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-cyan-600 rounded-lg hover:bg-cyan-500 text-white"
+            className={`px-4 py-2 rounded-lg ${theme.primaryButton}`}
           >
             保存
           </button>
         </div>
 
         <div className="mb-4">
-          <label className="inline-flex items-center px-4 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 text-white text-sm cursor-pointer">
+          <label className={`inline-flex items-center px-4 py-2 rounded-lg text-sm cursor-pointer ${theme.iconButton}`}>
             导入存档(.json)
             <input
               type="file"
@@ -944,12 +1040,12 @@ function SavePanel({ onClose }: { onClose: () => void }) {
           {importError ? (
             <p className="mt-2 text-sm text-red-400">{importError}</p>
           ) : (
-            <p className="mt-2 text-xs text-slate-500">支持导入从本游戏导出的 JSON 存档文件</p>
+            <p className={`mt-2 text-xs ${theme.panelSubtle}`}>支持导入从本游戏导出的 JSON 存档文件</p>
           )}
         </div>
 
-        <div className="flex gap-4 mb-4 text-sm">
-          <label className="flex items-center gap-2 text-slate-400">
+        <div className={`flex gap-4 mb-4 text-sm ${theme.name}`}>
+          <label className="flex items-center gap-2">
             <input 
               type="radio" 
               checked={exportType === 'txt'} 
@@ -958,7 +1054,7 @@ function SavePanel({ onClose }: { onClose: () => void }) {
             />
             小说(.txt)
           </label>
-          <label className="flex items-center gap-2 text-slate-400">
+          <label className="flex items-center gap-2">
             <input 
               type="radio" 
               checked={exportType === 'json'} 
@@ -971,20 +1067,20 @@ function SavePanel({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {saveSlots.length === 0 ? (
-            <p className="text-slate-500 text-center py-4">暂无存档</p>
+            <p className={`${theme.panelSubtle} text-center py-4`}>暂无存档</p>
           ) : (
             saveSlots.map(slot => (
-              <div key={slot.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+              <div key={slot.id} className={`flex items-center justify-between p-3 rounded-lg ${theme.userCard}`}>
                 <div>
-                  <div className="text-slate-200 font-medium">{slot.name}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className={`${theme.panelText} font-medium`}>{slot.name}</div>
+                  <div className={`text-xs ${theme.panelSubtle}`}>
                     {new Date(slot.createdAt).toLocaleString('zh-CN')}
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => exportType === 'txt' ? exportAsTxt(slot.id) : exportAsJson(slot.id)}
-                    className="text-slate-400 hover:text-slate-200 text-sm"
+                    className={`text-sm ${theme.name} hover:opacity-80`}
                   >
                     导出
                   </button>
@@ -1168,7 +1264,8 @@ function toChineseNumber(value: number): string {
 }
 
 function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
-  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated } = useSettingsStore();
+  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated, readingTheme, setReadingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -1210,47 +1307,72 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-lg">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
+      <div className={`rounded-xl p-6 w-full max-w-lg ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-200">AI 设置</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>AI 设置</h2>
+          <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-slate-400 text-sm mb-1">API Endpoint</label>
+            <label className={`block text-sm mb-2 ${theme.name}`}>阅读主题</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'night', label: '夜幕' },
+                { value: 'bamboo', label: '青竹' },
+                { value: 'paper', label: '纸卷' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setReadingTheme(option.value as ReadingTheme)}
+                  className={`px-3 py-2 rounded-lg border text-sm transition-all ${
+                    readingTheme === option.value
+                      ? 'border-cyan-500 bg-cyan-500/10 text-cyan-300'
+                      : theme.iconButton
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className={`mt-2 text-xs ${theme.panelSubtle}`}>夜幕适合夜间阅读，青竹与纸卷更适合长时间护眼阅读。</p>
+          </div>
+
+          <div>
+            <label className={`block text-sm mb-1 ${theme.name}`}>API Endpoint</label>
             <input
               type="text"
               value={api.endpoint}
               onChange={(e) => updateApi({ endpoint: e.target.value })}
               onBlur={handleEndpointBlur}
               placeholder="https://api.openai.com/v1"
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
             />
-            <p className="mt-1 text-xs text-slate-500">填写 API 基础地址，如 https://api.openai.com/v1</p>
+            <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">API Key</label>
+            <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
             <input
               type="password"
               value={api.apiKey}
               onChange={(e) => updateApi({ apiKey: e.target.value })}
               placeholder="sk-..."
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
             />
             <p className="mt-1 text-xs text-amber-400">
               ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
             </p>
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">模型</label>
+            <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
             <div className="flex gap-2">
               {availableModels.length > 0 ? (
                 <select
                   value={api.model}
                   onChange={(e) => updateApi({ model: e.target.value })}
-                  className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 >
                   {availableModels.map(m => (
                     <option key={m} value={m}>{m}</option>
@@ -1262,7 +1384,7 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                   value={api.model}
                   onChange={(e) => updateApi({ model: e.target.value })}
                   placeholder="选择或输入模型"
-                  className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
               )}
               <button
@@ -1282,11 +1404,7 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
           <button
             onClick={handleValidate}
             disabled={validating || !api.endpoint || !api.apiKey}
-            className={`w-full py-2 rounded-lg font-medium transition-all ${
-              isValidated 
-                ? 'bg-green-600 text-white' 
-                : 'bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50'
-            }`}
+            className={`w-full py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${isValidated ? 'bg-green-600 text-white' : theme.primaryButton}`}
           >
             {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
           </button>
@@ -1305,7 +1423,8 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
 function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const { updatePlayer } = useGameStore();
-  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated } = useSettingsStore();
+  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated, readingTheme } = useSettingsStore();
+  const theme = THEME_STYLES[readingTheme];
   const [step, setStep] = useState<'name' | 'api'>(initialStep);
   const [name, setName] = useState(generateInitialName);
   const [gender, setGender] = useState<'男' | '女'>('男');
@@ -1366,21 +1485,21 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
+    <div className={`min-h-screen flex items-center justify-center p-4 ${theme.app}`}>
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
-          <div className="mb-2 text-xs text-slate-500">v{APP_VERSION}</div>
+          <div className={`mb-2 text-xs ${theme.subtle}`}>v{APP_VERSION}</div>
           <div className="flex items-center justify-center gap-3">
-            <BlogIconLink className="h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
-            <GitHubIconLink className="h-10 w-10 rounded-full border border-slate-700 bg-slate-800/50 hover:border-slate-500" />
+            <BlogIconLink className={`h-10 w-10 rounded-full ${theme.iconButton}`} />
+            <GitHubIconLink className={`h-10 w-10 rounded-full ${theme.iconButton}`} />
           </div>
         </div>
         {step === 'name' ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
-            <h1 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6">
+          <div className={`rounded-xl p-8 ${theme.panel}`}>
+            <h1 className={`text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r ${theme.title} mb-6`}>
               修仙世界
             </h1>
-            <p className="text-slate-400 text-center mb-8">
+            <p className={`${theme.name} text-center mb-8`}>
               踏入修仙之路，书写属于你的传奇
             </p>
             <div className="flex justify-center gap-4 mb-4">
@@ -1390,7 +1509,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                 className={`px-4 py-2 rounded-lg border ${
                   gender === '男' 
                     ? 'bg-cyan-600 border-cyan-500 text-white' 
-                    : 'bg-slate-700 border-slate-600 text-slate-400'
+                    : `${theme.userCard} ${theme.name}`
                 }`}
               >
                 男
@@ -1401,7 +1520,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                 className={`px-4 py-2 rounded-lg border ${
                   gender === '女' 
                     ? 'bg-purple-600 border-purple-500 text-white' 
-                    : 'bg-slate-700 border-slate-600 text-slate-400'
+                    : `${theme.userCard} ${theme.name}`
                 }`}
               >
                 女
@@ -1413,60 +1532,60 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
               placeholder="请输入你的道号"
-              className="w-full px-4 py-3 bg-slate-700 border-2 border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-center text-lg mb-4 text-white placeholder:text-slate-400"
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none text-center text-lg mb-4 ${theme.input}`}
               autoFocus
             />
             <button
               onClick={handleRandomName}
-              className="w-full py-2 mb-4 bg-slate-700 border border-slate-500 rounded-lg hover:border-cyan-500 hover:text-cyan-300 transition-all text-slate-200"
+              className={`w-full py-2 mb-4 rounded-lg transition-all ${theme.choiceButton}`}
             >
               随机性别和道号
             </button>
             <button
               onClick={handleNameSubmit}
               disabled={!name.trim()}
-              className="w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+              className={`w-full py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium ${theme.primaryButton}`}
             >
               开始修仙
             </button>
           </div>
         ) : (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
-            <h2 className="text-xl font-bold text-slate-200 mb-6">配置AI API</h2>
+          <div className={`rounded-xl p-8 ${theme.panel}`}>
+            <h2 className={`text-xl font-bold mb-6 ${theme.panelText}`}>配置AI API</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-slate-400 text-sm mb-1">API Endpoint</label>
+                <label className={`block text-sm mb-1 ${theme.name}`}>API Endpoint</label>
                 <input
                   type="text"
                   value={api.endpoint}
                   onChange={(e) => updateApi({ endpoint: e.target.value })}
                   onBlur={handleEndpointBlur}
                   placeholder="https://api.openai.com/v1"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
-                <p className="mt-1 text-xs text-slate-500">填写 API 基础地址，如 https://api.openai.com/v1</p>
+                <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
               </div>
               <div>
-                <label className="block text-slate-400 text-sm mb-1">API Key</label>
+                <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
                 <input
                   type="password"
                   value={api.apiKey}
                   onChange={(e) => updateApi({ apiKey: e.target.value })}
                   placeholder="sk-..."
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
                 <p className="mt-1 text-xs text-amber-400">
                   ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
                 </p>
               </div>
               <div>
-                <label className="block text-slate-400 text-sm mb-1">模型</label>
+                <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
                 <div className="flex gap-2">
                   {availableModels.length > 0 ? (
                     <select
                       value={api.model}
                       onChange={(e) => updateApi({ model: e.target.value })}
-                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white"
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                     >
                       {availableModels.map(m => (
                         <option key={m} value={m}>{m}</option>
@@ -1478,13 +1597,13 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                       value={api.model}
                       onChange={(e) => updateApi({ model: e.target.value })}
                       placeholder="选择或输入模型"
-                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-500 rounded-lg focus:border-cyan-500 focus:outline-none text-white placeholder:text-slate-400"
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                     />
                   )}
                   <button
                     onClick={fetchModels}
                     disabled={!api.endpoint || !api.apiKey}
-                    className="px-3 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm text-slate-300 disabled:opacity-50"
+                    className={`px-3 py-2 rounded-lg text-sm disabled:opacity-50 ${theme.iconButton}`}
                   >
                     获取模型
                   </button>
@@ -1499,11 +1618,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
             <button
               onClick={handleValidate}
               disabled={validating || !api.endpoint || !api.apiKey}
-              className={`mt-4 w-full py-3 rounded-lg font-medium transition-all ${
-                isValidated 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50'
-              }`}
+            className={`mt-4 w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50 ${isValidated ? 'bg-green-600 text-white' : theme.primaryButton}`}
             >
               {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
             </button>
@@ -1511,7 +1626,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
             <button
               onClick={() => undefined}
               disabled={!isValidated || !api.endpoint || !api.apiKey}
-              className="mt-3 w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg hover:from-cyan-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-white"
+              className={`mt-3 w-full py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium ${theme.primaryButton}`}
             >
               进入游戏
             </button>
