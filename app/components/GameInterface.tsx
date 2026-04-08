@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, Globe, Save, Settings } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Eye, EyeOff, Globe, Save, Settings, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
@@ -24,6 +24,7 @@ const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
 const APP_VERSION = '0.5.1';
+const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
   app: string;
@@ -233,16 +234,19 @@ function ScrollJumpButton({
   onClick,
   themeClass,
   children,
+  disabled,
 }: {
   title: string;
   onClick: () => void;
   themeClass: string;
   children: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-sm transition-all sm:h-10 sm:w-10 ${themeClass}`}
       title={title}
       aria-label={title}
@@ -363,8 +367,18 @@ function GameScreen() {
   const streamedResponseRef = useRef('');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [scrollButtonOffset, setScrollButtonOffset] = useState({ x: 0, y: 0 });
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
+  const scrollControlsRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef({
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+    moved: false,
+  });
 
   const isInitialized = player.name && api.endpoint && isValidated;
 
@@ -468,6 +482,128 @@ function GameScreen() {
 
   const scrollToBottom = () => {
     bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
+
+  const clampScrollButtonOffset = useCallback((nextX: number, nextY: number) => {
+    const controls = scrollControlsRef.current;
+    const width = controls?.offsetWidth ?? 52;
+    const height = controls?.offsetHeight ?? 104;
+    const maxX = Math.max(0, window.innerWidth - width - 12);
+    const minY = Math.min(0, 12 - (window.innerHeight - height - 12));
+    const maxY = Math.max(0, window.innerHeight - height - 12);
+
+    return {
+      x: Math.min(maxX, Math.max(-12, nextX)),
+      y: Math.min(maxY, Math.max(minY, nextY)),
+    };
+  }, []);
+
+  const persistScrollButtonOffset = useCallback((nextOffset: { x: number; y: number }) => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(SCROLL_BUTTON_POSITION_STORAGE_KEY, JSON.stringify(nextOffset));
+  }, []);
+
+  const snapScrollButtonOffset = useCallback((nextOffset: { x: number; y: number }) => {
+    const controls = scrollControlsRef.current;
+    const width = controls?.offsetWidth ?? 52;
+    const rightInset = 12;
+    const currentRight = rightInset - nextOffset.x;
+    const currentLeft = window.innerWidth - width - currentRight;
+    const snappedX = currentLeft < currentRight
+      ? -(window.innerWidth - width - rightInset * 2)
+      : 0;
+
+    return clampScrollButtonOffset(snappedX, nextOffset.y);
+  }, [clampScrollButtonOffset]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const storedOffset = window.localStorage.getItem(SCROLL_BUTTON_POSITION_STORAGE_KEY);
+    if (!storedOffset) return;
+
+    try {
+      const parsed = JSON.parse(storedOffset) as { x?: number; y?: number };
+      const restoredOffset = clampScrollButtonOffset(parsed.x ?? 0, parsed.y ?? 0);
+      setScrollButtonOffset(restoredOffset);
+    } catch {
+      window.localStorage.removeItem(SCROLL_BUTTON_POSITION_STORAGE_KEY);
+    }
+  }, [clampScrollButtonOffset]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScrollButtonOffset((current) => {
+        const clamped = clampScrollButtonOffset(current.x, current.y);
+        persistScrollButtonOffset(clamped);
+        return clamped;
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [clampScrollButtonOffset, persistScrollButtonOffset]);
+
+  const handleScrollControlsPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: scrollButtonOffset.x,
+      originY: scrollButtonOffset.y,
+      moved: false,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleScrollControlsPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    const deltaY = event.clientY - dragStateRef.current.startY;
+
+    if (!dragStateRef.current.moved && Math.hypot(deltaX, deltaY) > 6) {
+      dragStateRef.current.moved = true;
+    }
+
+    if (!dragStateRef.current.moved) return;
+
+    event.preventDefault();
+    setScrollButtonOffset((() => {
+      const nextOffset = clampScrollButtonOffset(
+        dragStateRef.current.originX + deltaX,
+        dragStateRef.current.originY + deltaY
+      );
+      persistScrollButtonOffset(nextOffset);
+      return nextOffset;
+    })());
+  };
+
+  const handleScrollControlsPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const nextOffset = dragStateRef.current.moved
+      ? snapScrollButtonOffset(scrollButtonOffset)
+      : scrollButtonOffset;
+
+    if (dragStateRef.current.moved) {
+      setScrollButtonOffset(nextOffset);
+      persistScrollButtonOffset(nextOffset);
+    }
+
+    dragStateRef.current = {
+      pointerId: -1,
+      startX: 0,
+      startY: 0,
+      originX: nextOffset.x,
+      originY: nextOffset.y,
+      moved: false,
+    };
   };
 
   const handleChoice = async (choiceText: string) => {
@@ -784,12 +920,20 @@ function GameScreen() {
       </main>
 
       {showScrollButtons && (
-        <div className="fixed bottom-24 right-3 z-30 flex flex-col gap-2 sm:bottom-6 sm:right-6">
-          <ScrollJumpButton title="回到顶部" onClick={scrollToTop} themeClass={theme.iconButton}>
+        <div
+          ref={scrollControlsRef}
+          className="fixed bottom-36 right-3 z-30 flex touch-none flex-col gap-1.5 sm:bottom-6 sm:right-6 sm:gap-2"
+          style={{ transform: `translate(${scrollButtonOffset.x}px, ${scrollButtonOffset.y}px)` }}
+          onPointerDown={handleScrollControlsPointerDown}
+          onPointerMove={handleScrollControlsPointerMove}
+          onPointerUp={handleScrollControlsPointerEnd}
+          onPointerCancel={handleScrollControlsPointerEnd}
+        >
+          <ScrollJumpButton title="回到顶部" onClick={scrollToTop} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
             <ChevronUp size={20} strokeWidth={1.8} />
           </ScrollJumpButton>
           {!isNearBottom && (
-            <ScrollJumpButton title="回到最下方" onClick={scrollToBottom} themeClass={theme.iconButton}>
+            <ScrollJumpButton title="回到最下方" onClick={scrollToBottom} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
               <ChevronDown size={20} strokeWidth={1.8} />
             </ScrollJumpButton>
           )}
@@ -1342,11 +1486,18 @@ function toChineseNumber(value: number): string {
 }
 
 function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
-  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated, readingTheme, setReadingTheme, rememberApiKey, setRememberApiKey, setAvailableModels } = useSettingsStore();
+  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated, readingTheme, setReadingTheme, rememberApiKey, setRememberApiKey, setAvailableModels, clearApiKey } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [validationMessage, setValidationMessage] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const handleClearApiKey = () => {
+    clearApiKey();
+    setValidationError('');
+    setValidationMessage('已清除当前浏览器中的 API Key');
+  };
 
   const handleValidate = async () => {
     if (!api.endpoint || !api.apiKey) {
@@ -1437,13 +1588,36 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
               <div>
                 <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
-                <input
-                  type="password"
-                  value={api.apiKey}
-                  onChange={(e) => updateApi({ apiKey: e.target.value })}
-                  placeholder="sk-..."
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
-                />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={api.apiKey}
+                      onChange={(e) => updateApi({ apiKey: e.target.value })}
+                      placeholder="sk-..."
+                      className={`w-full px-4 py-2 pr-12 border rounded-lg focus:outline-none ${theme.input}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey((current) => !current)}
+                      className={`absolute inset-y-0 right-2 inline-flex items-center ${theme.panelSubtle} hover:opacity-80`}
+                      aria-label={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                      title={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                    >
+                      {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearApiKey}
+                    disabled={!api.apiKey}
+                    className={`inline-flex items-center justify-center rounded-lg px-3 py-2 disabled:opacity-50 ${theme.iconButton}`}
+                    title="清除已保存或当前输入的 API Key"
+                    aria-label="清除 API Key"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
                 <p className="mt-1 text-xs text-amber-400">
                   ⚠️ API Key 默认不会持久保存。只有勾选下方选项后，才会保存在当前浏览器本地。
                 </p>
@@ -1535,7 +1709,7 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
 function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const { updatePlayer } = useGameStore();
-  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated, readingTheme, rememberApiKey, setRememberApiKey, setAvailableModels } = useSettingsStore();
+  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated, readingTheme, rememberApiKey, setRememberApiKey, setAvailableModels, clearApiKey } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const [step, setStep] = useState<'name' | 'api'>(initialStep);
   const [name, setName] = useState(generateInitialName);
@@ -1543,6 +1717,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [validationMessage, setValidationMessage] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
     setStep(initialStep);
@@ -1595,6 +1770,12 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
     if (api.endpoint && api.apiKey) {
       await fetchModels();
     }
+  };
+
+  const handleClearApiKey = () => {
+    clearApiKey();
+    setValidationError('');
+    setValidationMessage('已清除当前浏览器中的 API Key');
   };
 
   return (
@@ -1681,13 +1862,36 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
               </div>
               <div>
                 <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
-                <input
-                  type="password"
-                  value={api.apiKey}
-                  onChange={(e) => updateApi({ apiKey: e.target.value })}
-                  placeholder="sk-..."
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
-                />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={api.apiKey}
+                      onChange={(e) => updateApi({ apiKey: e.target.value })}
+                      placeholder="sk-..."
+                      className={`w-full px-4 py-2 pr-12 border rounded-lg focus:outline-none ${theme.input}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey((current) => !current)}
+                      className={`absolute inset-y-0 right-2 inline-flex items-center ${theme.panelSubtle} hover:opacity-80`}
+                      aria-label={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                      title={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                    >
+                      {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearApiKey}
+                    disabled={!api.apiKey}
+                    className={`inline-flex items-center justify-center rounded-lg px-3 py-2 disabled:opacity-50 ${theme.iconButton}`}
+                    title="清除已保存或当前输入的 API Key"
+                    aria-label="清除 API Key"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
                 <p className="mt-1 text-xs text-amber-400">
                   ⚠️ API Key 默认不会保存；仅在你主动勾选时写入当前浏览器本地存储。
                 </p>
@@ -1763,7 +1967,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
             </button>
 
             <button
-              onClick={() => undefined}
+              onClick={handleValidate}
               disabled={!isValidated || !api.endpoint || !api.apiKey}
               className={`mt-3 w-full py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium ${theme.primaryButton}`}
             >

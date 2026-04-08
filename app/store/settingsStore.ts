@@ -19,6 +19,7 @@ interface SettingsStore {
   readingTheme: ReadingTheme;
   rememberApiKey: boolean;
   updateApi: (updates: Partial<ApiSettings>) => void;
+  clearApiKey: () => void;
   setValidated: (validated: boolean) => void;
   setAvailableModels: (models: string[]) => void;
   setReadingTheme: (theme: ReadingTheme) => void;
@@ -49,6 +50,11 @@ export const useSettingsStore = create<SettingsStore>()(
           endpoint: updates.endpoint !== undefined ? normalizeApiBaseUrl(updates.endpoint) : state.api.endpoint,
           apiKey: updates.apiKey !== undefined ? updates.apiKey.trim() : state.api.apiKey,
         },
+        isValidated: false,
+      })),
+      clearApiKey: () => set((state) => ({
+        api: { ...state.api, apiKey: '' },
+        rememberApiKey: false,
         isValidated: false,
       })),
       setValidated: (validated) => set({ isValidated: validated }),
