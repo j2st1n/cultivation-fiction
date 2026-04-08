@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { BookOpen, Globe, Save, Settings } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Globe, Save, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
@@ -227,6 +227,30 @@ function HeaderIconButton({
   );
 }
 
+function ScrollJumpButton({
+  title,
+  onClick,
+  themeClass,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  themeClass: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-sm transition-all sm:h-10 sm:w-10 ${themeClass}`}
+      title={title}
+      aria-label={title}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StoryMarkdown({ content }: { content: string }) {
   return (
     <div className="prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-strong:text-slate-100 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-headings:text-slate-100">
@@ -335,6 +359,10 @@ function GameScreen() {
   const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [showStoryPanel, setShowStoryPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const topAnchorRef = useRef<HTMLDivElement | null>(null);
+  const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
 
   const isInitialized = player.name && api.endpoint && isValidated;
 
@@ -395,6 +423,41 @@ function GameScreen() {
       startGame();
     }
   }, [startGame, isInitialized, player.name, messages.length, isGenerating]);
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      const scrollTop = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const distanceFromBottom = documentHeight - (scrollTop + viewportHeight);
+
+      setShowScrollButtons(scrollTop > 240);
+      setIsNearBottom(distanceFromBottom < 180);
+    };
+
+    updateScrollState();
+    window.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+
+    return () => {
+      window.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isGenerating || isNearBottom) {
+      bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages, currentText, choices, isGenerating, isNearBottom]);
+
+  const scrollToTop = () => {
+    topAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const scrollToBottom = () => {
+    bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
 
   const handleChoice = async (choiceText: string) => {
     const userMessage: Message = {
@@ -596,6 +659,7 @@ function GameScreen() {
 
   return (
     <div className={`min-h-screen ${theme.app}`}>
+      <div ref={topAnchorRef} aria-hidden="true" />
       <header className={`backdrop-blur-sm sticky top-0 z-10 ${theme.header}`}>
         <div className="max-w-4xl mx-auto px-4 py-3 space-y-3 sm:space-y-0">
           <div className="flex items-center justify-between gap-3 sm:hidden">
@@ -690,12 +754,12 @@ function GameScreen() {
         />
       )}
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <div className="space-y-4 mb-6">
+      <main className="max-w-4xl mx-auto px-3 pb-28 pt-4 sm:px-4 sm:py-6 sm:pb-8">
+        <div className="space-y-3 sm:space-y-4 mb-6">
           {messages.map((msg) => (
             <div 
               key={msg.id}
-              className={`p-4 rounded-lg whitespace-pre-wrap ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-8 italic`}`}
+              className={`rounded-xl whitespace-pre-wrap px-4 py-4 text-[15px] leading-7 sm:rounded-lg sm:text-base sm:leading-8 ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-4 sm:ml-8 italic`}`}
             >
               {msg.role === 'assistant' ? (
                 <ThemedStoryMarkdown content={msg.content} themeClass={theme.markdown} />
@@ -706,8 +770,8 @@ function GameScreen() {
           ))}
           
           {currentText && (
-            <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
-              <div className="leading-relaxed whitespace-pre-wrap">{currentText}</div>
+            <div className={`rounded-xl px-4 py-4 sm:rounded-lg ${theme.streamingCard}`}>
+              <div className="whitespace-pre-wrap text-[15px] leading-7 sm:text-base sm:leading-8">{currentText}</div>
             </div>
           )}
           
@@ -753,25 +817,42 @@ function GameScreen() {
         )}
 
         {(!isGenerating) && (
-          <div className="flex gap-2 mt-4">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleFreeInput()}
-              placeholder={requiresInput ? "请描述你的行动..." : "自由行动或自定义输入..."}
-              className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none ${theme.input}`}
-            />
-            <button
-              onClick={handleFreeInput}
-              disabled={!inputText.trim() && choices.length > 0}
-              className={`px-6 py-2 rounded-lg transition-all font-medium disabled:opacity-50 ${theme.primaryButton}`}
-            >
-              确认
-            </button>
+          <div className={`sticky bottom-3 z-20 -mx-1 rounded-2xl border p-2 shadow-xl backdrop-blur sm:static sm:mx-0 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none ${theme.panel}`}>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFreeInput()}
+                placeholder={requiresInput ? "请描述你的行动..." : "自由行动或自定义输入..."}
+                className={`flex-1 px-4 py-3 border-2 rounded-xl focus:outline-none text-[15px] ${theme.input}`}
+              />
+              <button
+                onClick={handleFreeInput}
+                disabled={!inputText.trim() && choices.length > 0}
+                className={`px-5 py-2 rounded-xl transition-all font-medium disabled:opacity-50 ${theme.primaryButton}`}
+              >
+                确认
+              </button>
+            </div>
           </div>
         )}
+
+        <div ref={bottomAnchorRef} aria-hidden="true" className="h-px" />
       </main>
+
+      {showScrollButtons && (
+        <div className="fixed bottom-24 right-3 z-30 flex flex-col gap-2 sm:bottom-6 sm:right-6">
+          <ScrollJumpButton title="回到顶部" onClick={scrollToTop} themeClass={theme.iconButton}>
+            <ChevronUp size={20} strokeWidth={1.8} />
+          </ScrollJumpButton>
+          {!isNearBottom && (
+            <ScrollJumpButton title="回到最下方" onClick={scrollToBottom} themeClass={theme.iconButton}>
+              <ChevronDown size={20} strokeWidth={1.8} />
+            </ScrollJumpButton>
+          )}
+        </div>
+      )}
 
       {showSavePanel && (
         <SavePanel onClose={() => setShowSavePanel(false)} />
