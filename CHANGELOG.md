@@ -6,6 +6,13 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-08
+
+### Changed
+- Mobile reading now includes quick jump controls for returning to the top or bottom during long sessions
+- Streaming output no longer forcibly drags the viewport downward while the reader is reviewing earlier text
+- Hidden 剧情状态 metadata and raw 选项 / 自由输入 blocks are now filtered out of visible streamed and final narrative output
+
 ## [0.5.0] - 2026-04-07
 
 ### Added
