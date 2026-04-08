@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripStoryStateBlock } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -359,6 +359,7 @@ function GameScreen() {
   const [showWorldPanel, setShowWorldPanel] = useState(false);
   const [showStoryPanel, setShowStoryPanel] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const streamedResponseRef = useRef('');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -366,11 +367,47 @@ function GameScreen() {
 
   const isInitialized = player.name && api.endpoint && isValidated;
 
+  const resetStreamingState = () => {
+    streamedResponseRef.current = '';
+    setCurrentText('');
+  };
+
+  const handleVisibleChunk = (chunk: string) => {
+    streamedResponseRef.current += chunk;
+    setCurrentText(stripInteractiveBlocks(streamedResponseRef.current));
+  };
+
+  const finalizeResponse = (text: string) => {
+    applyResponseStateUpdates({
+      text,
+      currentRealm: player.realm,
+      mainStoryArc: world.mainStoryArc,
+      currentObjective: world.currentObjective,
+      recentProgress: world.recentProgress,
+      keyClues: world.keyClues,
+      advanceRealm,
+      updateWorld,
+    });
+
+    const aiMessage: Message = {
+      id: `msg_${Date.now()}`,
+      role: 'assistant',
+      content: stripInteractiveBlocks(text),
+      timestamp: Date.now(),
+    };
+
+    addMessage(aiMessage);
+    resetStreamingState();
+    setChoices(parseChoicesFromResponse(text));
+    setRequiresInput(checkRequiresInput(text));
+    setGenerating(false);
+  };
+
   const startGame = useCallback(async () => {
     if (!player.name || !isInitialized) return;
     
     setGenerating(true);
-    setCurrentText('');
+    resetStreamingState();
     
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
@@ -381,42 +418,15 @@ function GameScreen() {
 
     const fullMessages: Message[] = [initialMessage];
     
-    let fullResponse = '';
-    
     await streamChat(fullMessages, {
-      onChunk: (chunk) => {
-        setCurrentText(prev => prev + chunk);
-        fullResponse += chunk;
-      },
-      onComplete: (text) => {
-        applyResponseStateUpdates({
-          text,
-          currentRealm: player.realm,
-          mainStoryArc: world.mainStoryArc,
-          currentObjective: world.currentObjective,
-          recentProgress: world.recentProgress,
-          keyClues: world.keyClues,
-          advanceRealm,
-          updateWorld,
-        });
-        const aiMessage: Message = {
-          id: `msg_${Date.now()}`,
-          role: 'assistant',
-          content: stripStoryStateBlock(text),
-          timestamp: Date.now(),
-        };
-        addMessage(aiMessage);
-        setCurrentText('');
-        setChoices(parseChoicesFromResponse(text));
-        setRequiresInput(checkRequiresInput(text));
-        setGenerating(false);
-      },
+      onChunk: handleVisibleChunk,
+      onComplete: finalizeResponse,
       onError: (error) => {
         setCurrentText(`错误: ${error.message}`);
         setGenerating(false);
       },
     });
-  }, [player.name, world.currentLocation, player.realm, addMessage, setGenerating]);
+  }, [player.name, player.gender, player.realm, world.currentLocation, isInitialized, addMessage, advanceRealm, updateWorld, world.mainStoryArc, world.currentObjective, world.recentProgress, world.keyClues, setGenerating]);
 
   useEffect(() => {
     if (isInitialized && player.name && !messages.length && !isGenerating) {
@@ -468,7 +478,7 @@ function GameScreen() {
     };
     addMessage(userMessage);
     
-    setCurrentText('');
+    resetStreamingState();
     setChoices([]);
     setGenerating(true);
     
@@ -491,39 +501,12 @@ function GameScreen() {
     };
     
     const fullMessages: Message[] = [...messages, userMessage];
-    let fullResponse = '';
-    
     await streamChat([systemMessage, ...fullMessages], {
-      onChunk: (chunk) => {
-        setCurrentText(prev => prev + chunk);
-        fullResponse += chunk;
-      },
-      onComplete: (text) => {
-        applyResponseStateUpdates({
-          text,
-          currentRealm: player.realm,
-          mainStoryArc: world.mainStoryArc,
-          currentObjective: world.currentObjective,
-          recentProgress: world.recentProgress,
-          keyClues: world.keyClues,
-          advanceRealm,
-          updateWorld,
-        });
-        const aiMessage: Message = {
-          id: `msg_${Date.now()}`,
-          role: 'assistant',
-          content: stripStoryStateBlock(text),
-          timestamp: Date.now(),
-        };
-        addMessage(aiMessage);
-        setCurrentText('');
-        setChoices(parseChoicesFromResponse(text));
-        setRequiresInput(checkRequiresInput(text));
-        setGenerating(false);
-      },
+      onChunk: handleVisibleChunk,
+      onComplete: finalizeResponse,
       onError: (error) => {
         setErrorMsg(error.message);
-        setCurrentText('');
+        resetStreamingState();
         setGenerating(false);
       },
     });
@@ -535,6 +518,7 @@ function GameScreen() {
     
     setErrorMsg(null);
     setGenerating(true);
+    resetStreamingState();
     
     const contextMsg = buildContextMessage(
       player.name,
@@ -555,33 +539,14 @@ function GameScreen() {
     };
     
     await streamChat([systemMessage, ...messages], {
-      onChunk: (chunk) => setCurrentText(prev => prev + chunk),
+      onChunk: handleVisibleChunk,
       onComplete: (text) => {
-        applyResponseStateUpdates({
-          text,
-          currentRealm: player.realm,
-          mainStoryArc: world.mainStoryArc,
-          currentObjective: world.currentObjective,
-          recentProgress: world.recentProgress,
-          keyClues: world.keyClues,
-          advanceRealm,
-          updateWorld,
-        });
-        const aiMessage: Message = {
-          id: `msg_${Date.now()}`,
-          role: 'assistant',
-          content: stripStoryStateBlock(text),
-          timestamp: Date.now(),
-        };
-        addMessage(aiMessage);
-        setCurrentText('');
-        setChoices(parseChoicesFromResponse(text));
-        setRequiresInput(checkRequiresInput(text));
-        setGenerating(false);
+        finalizeResponse(text);
         setErrorMsg(null);
       },
       onError: (error) => {
         setErrorMsg(error.message);
+        resetStreamingState();
         setGenerating(false);
       },
     });
@@ -598,7 +563,7 @@ function GameScreen() {
     };
     addMessage(userMessage);
     
-    setCurrentText('');
+    resetStreamingState();
     setInputText('');
     setRequiresInput(false);
     setGenerating(true);
@@ -624,32 +589,8 @@ function GameScreen() {
     const fullMessages: Message[] = [...messages, userMessage];
     
     await streamChat([systemMessage, ...fullMessages], {
-      onChunk: (chunk) => {
-        setCurrentText(prev => prev + chunk);
-      },
-      onComplete: (text) => {
-        applyResponseStateUpdates({
-          text,
-          currentRealm: player.realm,
-          mainStoryArc: world.mainStoryArc,
-          currentObjective: world.currentObjective,
-          recentProgress: world.recentProgress,
-          keyClues: world.keyClues,
-          advanceRealm,
-          updateWorld,
-        });
-        const aiMessage: Message = {
-          id: `msg_${Date.now()}`,
-          role: 'assistant',
-          content: stripStoryStateBlock(text),
-          timestamp: Date.now(),
-        };
-        addMessage(aiMessage);
-        setCurrentText('');
-        setChoices(parseChoicesFromResponse(text));
-        setRequiresInput(checkRequiresInput(text));
-        setGenerating(false);
-      },
+      onChunk: handleVisibleChunk,
+      onComplete: finalizeResponse,
       onError: (error) => {
         setCurrentText(`错误: ${error.message}`);
         setGenerating(false);

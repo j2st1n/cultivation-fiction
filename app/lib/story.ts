@@ -98,6 +98,15 @@ export function checkRequiresInput(text: string): boolean {
   return text.includes('【自由输入】') || text.includes('请描述你的行动');
 }
 
+export function stripInteractiveBlocks(text: string): string {
+  return text
+    .replace(/\n?【选项】[\s\S]*?(?=\n?【自由输入】|\n?【剧情状态】|$)/g, '')
+    .replace(/\n?【自由输入】.*?(?=\n?【剧情状态】|$)/g, '')
+    .replace(/\n?【剧情状态】[\s\S]*$/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function stripStoryStateBlock(text: string): string {
   return text.replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
 }
@@ -151,7 +160,7 @@ export function extractMainStoryArc(text: string): string {
     return structuredState.mainStoryArc;
   }
 
-  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
   const patterns = [
     /主线(?:任务|目标)[：:]\s*([^\n。！？]+)/,
     /你此行是为了([^\n。！？]+)/,
@@ -186,7 +195,7 @@ export function extractCurrentObjective(text: string): string {
     return structuredState.currentObjective;
   }
 
-  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
   const patterns = [
     /当前(?:任务|目标)[：:]\s*([^\n。！？]+)/,
     /你的目标是([^\n。！？]+)/,
@@ -229,7 +238,7 @@ export function extractRecentProgress(text: string): string {
     return structuredState.recentProgress;
   }
 
-  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
   const sentences = storyPart
     .split(/(?<=[。！？])/)
     .map((sentence) => sentence.trim())
@@ -248,7 +257,7 @@ export function extractKeyClues(text: string): string[] {
     return structuredState.keyClues;
   }
 
-  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
   const clues: string[] = [];
   const cluePatterns = [
     /线索[：:]\s*([^\n。！？]+)/g,
