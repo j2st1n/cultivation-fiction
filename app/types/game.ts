@@ -29,6 +29,8 @@ export interface PlayerAttributes {
 
 export interface WorldState {
   currentLocation: string;
+  currentRegion?: string;
+  currentArea?: string;
   currentScene: string;
   mainStoryArc: string;
   currentObjective: string;

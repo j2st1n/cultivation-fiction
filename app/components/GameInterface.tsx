@@ -7,7 +7,7 @@ import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { validateApiConfiguration } from '@/app/lib/apiConfig';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRealmStage, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, composeLocationLabel, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractLocationState, extractMainStoryArc, extractRealmStage, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateLocationField, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -279,6 +279,8 @@ function applyResponseStateUpdates({
   currentRealm,
   currentRealmStage,
   currentLocation,
+  currentRegion,
+  currentArea,
   visitedLocations,
   mainStoryArc,
   currentObjective,
@@ -292,6 +294,8 @@ function applyResponseStateUpdates({
   currentRealm: CultivationRealm;
   currentRealmStage?: string;
   currentLocation: string;
+  currentRegion?: string;
+  currentArea?: string;
   visitedLocations: string[];
   mainStoryArc: string;
   currentObjective: string;
@@ -302,7 +306,8 @@ function applyResponseStateUpdates({
   updateWorld: (updates: Partial<import('@/app/types/game').WorldState>) => void;
 }) {
   const nextRealm = detectRealmUpgrade(text);
-  const nextLocation = extractCurrentLocation(text);
+  const nextLocationState = extractLocationState(text);
+  const nextLocation = composeLocationLabel(nextLocationState.currentRegion, nextLocationState.currentArea, nextLocationState.currentLocation) || extractCurrentLocation(text);
   const nextRealmStage = extractRealmStage(text);
   if (shouldAdvanceRealm(currentRealm, nextRealm)) {
     advanceRealm(nextRealm);
@@ -321,6 +326,14 @@ function applyResponseStateUpdates({
   if (shouldUpdateCurrentLocation(nextLocation, currentLocation)) {
     updates.currentLocation = nextLocation;
     updates.visitedLocations = Array.from(new Set([...visitedLocations, currentLocation, nextLocation].filter(Boolean)));
+  }
+
+  if (shouldUpdateLocationField(nextLocationState.currentRegion, currentRegion)) {
+    updates.currentRegion = nextLocationState.currentRegion;
+  }
+
+  if (shouldUpdateLocationField(nextLocationState.currentArea, currentArea)) {
+    updates.currentArea = nextLocationState.currentArea;
   }
 
   if (shouldUpdateStoryArc(nextArc, mainStoryArc)) {
@@ -377,6 +390,7 @@ function GameScreen() {
   const { api, isValidated, readingTheme } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const displayRealm = player.realmStage ? `${player.realm}${player.realmStage}` : player.realm;
+  const displayLocation = composeLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
@@ -395,6 +409,7 @@ function GameScreen() {
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
   const latestAssistantMessageRef = useRef<HTMLDivElement | null>(null);
+  const latestUserMessageRef = useRef<HTMLDivElement | null>(null);
   const scrollControlsRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -424,6 +439,8 @@ function GameScreen() {
       currentRealm: player.realm,
       currentRealmStage: player.realmStage,
       currentLocation: world.currentLocation,
+      currentRegion: world.currentRegion,
+      currentArea: world.currentArea,
       visitedLocations: world.visitedLocations,
       mainStoryArc: world.mainStoryArc,
       currentObjective: world.currentObjective,
@@ -457,7 +474,7 @@ function GameScreen() {
     const initialMessage: Message = {
       id: `msg_${Date.now()}`,
       role: 'system',
-      content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${world.currentLocation}。请根据以下要求直接生成本次独立开局：\n\n${INITIAL_STORY}`,
+      content: `开始修仙之旅。玩家${player.name}，性别${player.gender}，境界${player.realm}，地点${displayLocation}。请根据以下要求直接生成本次独立开局：\n\n${INITIAL_STORY}`,
       timestamp: Date.now(),
     };
 
@@ -471,7 +488,7 @@ function GameScreen() {
         setGenerating(false);
       },
     });
-  }, [player.name, player.gender, player.realm, world.currentLocation, isInitialized, addMessage, advanceRealm, updateWorld, world.mainStoryArc, world.currentObjective, world.recentProgress, world.keyClues, setGenerating]);
+  }, [player.name, player.gender, player.realm, displayLocation, isInitialized, addMessage, advanceRealm, updatePlayer, updateWorld, world.currentRegion, world.currentArea, world.currentLocation, world.mainStoryArc, world.currentObjective, world.recentProgress, world.keyClues, world.visitedLocations, setGenerating]);
 
   useEffect(() => {
     if (isInitialized && player.name && !messages.length && !isGenerating) {
@@ -533,8 +550,8 @@ function GameScreen() {
     }
   }, [messages, currentText, choices, isNearBottom]);
 
-  const scrollToRecent = () => {
-    latestAssistantMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToLatestAction = () => {
+    latestUserMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const scrollToBottom = () => {
@@ -878,7 +895,7 @@ function GameScreen() {
         <WorldPanel 
           onClose={() => setShowWorldPanel(false)}
           player={{ ...player, displayRealm }}
-          world={world}
+          world={{ ...world, displayLocation }}
         />
       )}
 
@@ -894,7 +911,7 @@ function GameScreen() {
           {messages.map((msg) => (
             <div 
               key={msg.id}
-              ref={msg.role === 'assistant' ? latestAssistantMessageRef : undefined}
+              ref={msg.role === 'assistant' ? latestAssistantMessageRef : msg.role === 'user' ? latestUserMessageRef : undefined}
               className={`rounded-xl whitespace-pre-wrap px-4 py-4 text-[15px] leading-7 sm:rounded-lg sm:text-base sm:leading-8 ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-4 sm:ml-8 italic`}`}
             >
               {msg.role === 'assistant' ? (
@@ -988,7 +1005,7 @@ function GameScreen() {
           onPointerCancel={handleScrollControlsPointerEnd}
         >
           {showBackToRecent && (
-            <ScrollJumpButton title="回到上一段剧情" onClick={scrollToRecent} themeClass={theme.iconButton} disabled={dragStateRef.current.moved} small>
+            <ScrollJumpButton title="回到上一条操作" onClick={scrollToLatestAction} themeClass={theme.iconButton} disabled={dragStateRef.current.moved} small>
               <ChevronUp size={18} strokeWidth={1.8} />
             </ScrollJumpButton>
           )}
@@ -1067,7 +1084,7 @@ function WorldPanel({
             </div>
             <div className="flex justify-between">
               <span className={theme.panelSubtle}>当前地点</span>
-              <span className={theme.panelText}>{world.currentLocation}</span>
+              <span className={theme.panelText}>{world.displayLocation || world.currentLocation}</span>
             </div>
             <div className="flex justify-between">
               <span className={theme.panelSubtle}>最近进展</span>
@@ -1075,7 +1092,7 @@ function WorldPanel({
             </div>
             <div className="flex justify-between">
               <span className={theme.panelSubtle}>已知地点</span>
-              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.visitedLocations.join('、') || world.currentLocation}</span>
+              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.visitedLocations.join('、') || world.displayLocation || world.currentLocation}</span>
             </div>
           </div>
         </div>
@@ -1212,9 +1229,10 @@ function SavePanel({ onClose }: { onClose: () => void }) {
       .map((message) => sanitizeNovelContent(message.content))
       .filter((message) => message.length > 0);
     const exportRealm = player.realmStage ? `${player.realm}${player.realmStage}` : player.realm;
+    const exportLocation = composeLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
 
     let content = `《修仙世界》\n`;
-    content += `角色：${player.name} | 境界：${exportRealm} | 地点：${world.currentLocation}\n`;
+    content += `角色：${player.name} | 境界：${exportRealm} | 地点：${exportLocation}\n`;
     content += `存档：${slot.name} | ${new Date(slot.createdAt).toLocaleString('zh-CN')}\n`;
     content += `${'='.repeat(40)}\n\n`;
 
@@ -1241,7 +1259,7 @@ function SavePanel({ onClose }: { onClose: () => void }) {
         createdAt: slot.createdAt,
         player: slot.gameState.player.name,
         realm: slot.gameState.player.realmStage ? `${slot.gameState.player.realm}${slot.gameState.player.realmStage}` : slot.gameState.player.realm,
-        location: slot.gameState.world.currentLocation,
+        location: composeLocationLabel(slot.gameState.world.currentRegion, slot.gameState.world.currentArea, slot.gameState.world.currentLocation) || slot.gameState.world.currentLocation,
       },
       exportType: 'json',
       version: '1.0',

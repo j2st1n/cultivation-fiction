@@ -115,13 +115,15 @@ export function stripStoryStateBlock(text: string): string {
   return stripThinkBlocks(text).replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
 }
 
-export function extractStoryState(text: string): { currentLocation: string; realmStage: string; mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
+export function extractStoryState(text: string): { currentRegion: string; currentArea: string; currentLocation: string; realmStage: string; mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
   const match = text.match(/【剧情状态】([\s\S]*)$/);
   if (!match) {
-    return { currentLocation: '', realmStage: '', mainStoryArc: '', currentObjective: '', recentProgress: '', keyClues: [] };
+    return { currentRegion: '', currentArea: '', currentLocation: '', realmStage: '', mainStoryArc: '', currentObjective: '', recentProgress: '', keyClues: [] };
   }
 
   const stateBlock = match[1];
+  const regionMatch = stateBlock.match(/所在区域:\s*([^\n]+)/);
+  const areaMatch = stateBlock.match(/所处场景:\s*([^\n]+)/);
   const locationMatch = stateBlock.match(/当前地点:\s*([^\n]+)/);
   const realmStageMatch = stateBlock.match(/境界层数:\s*([^\n]+)/);
   const arcMatch = stateBlock.match(/主线脉络:\s*([^\n]+)/);
@@ -130,6 +132,8 @@ export function extractStoryState(text: string): { currentLocation: string; real
   const cluesMatch = stateBlock.match(/关键线索:\s*([^\n]+)/);
 
   return {
+    currentRegion: regionMatch?.[1]?.trim() || '',
+    currentArea: areaMatch?.[1]?.trim() || '',
     currentLocation: locationMatch?.[1]?.trim() || '',
     realmStage: realmStageMatch?.[1]?.trim() || '',
     mainStoryArc: arcMatch?.[1]?.trim() || '',
@@ -139,10 +143,38 @@ export function extractStoryState(text: string): { currentLocation: string; real
   };
 }
 
+export function composeLocationLabel(region?: string, area?: string, location?: string): string {
+  return [region, area, location]
+    .filter((value) => value && value !== '无')
+    .join(' · ')
+    .trim();
+}
+
+export function extractLocationState(text: string): { currentRegion: string; currentArea: string; currentLocation: string } {
+  const structuredState = extractStoryState(text);
+  const state = {
+    currentRegion: structuredState.currentRegion !== '无' ? structuredState.currentRegion : '',
+    currentArea: structuredState.currentArea !== '无' ? structuredState.currentArea : '',
+    currentLocation: structuredState.currentLocation !== '无' ? structuredState.currentLocation : '',
+  };
+
+  if (state.currentRegion || state.currentArea || state.currentLocation) {
+    return state;
+  }
+
+  const fallbackLocation = extractCurrentLocation(text);
+  return {
+    currentRegion: '',
+    currentArea: '',
+    currentLocation: fallbackLocation,
+  };
+}
+
 export function extractCurrentLocation(text: string): string {
   const structuredState = extractStoryState(text);
-  if (structuredState.currentLocation && structuredState.currentLocation !== '无') {
-    return structuredState.currentLocation;
+  const composedLocation = composeLocationLabel(structuredState.currentRegion, structuredState.currentArea, structuredState.currentLocation);
+  if (composedLocation) {
+    return composedLocation;
   }
 
   const storyPart = stripInteractiveBlocks(text) || text.trim();
@@ -366,6 +398,13 @@ export function shouldUpdateCurrentLocation(nextLocation: string, currentLocatio
   if (!nextLocation.trim()) return false;
   if (nextLocation === currentLocation) return false;
   if (nextLocation.length < 2) return false;
+  return true;
+}
+
+export function shouldUpdateLocationField(nextValue: string, currentValue?: string): boolean {
+  if (!nextValue.trim()) return false;
+  if (nextValue === '无') return false;
+  if (nextValue === (currentValue || '')) return false;
   return true;
 }
 
