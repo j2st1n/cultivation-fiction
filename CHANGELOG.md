@@ -6,6 +6,14 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-04-08
+
+### Changed
+- Endpoint typing no longer gets rewritten with `/v1` while the user is still entering the URL manually
+- Reading controls now target more meaningful conversation anchors and fade away more gracefully during long-form reading
+- World-state syncing now carries structured location fields and realm sub-level display so UI metadata better matches the story text
+- The world panel was simplified to avoid duplicated progress information and overly fragmented location display
+
 ## [0.5.1] - 2026-04-08
 
 ### Changed
