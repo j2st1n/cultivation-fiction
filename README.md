@@ -5,6 +5,9 @@
 玩家可以自定义昵称、性别和 AI 提供方，在浏览器中体验开放式修仙剧情。每次新开局都可以生成不同的背景与长期剧情方向，支持选项推进与自由输入混合交互，并提供本地存档、导出能力，以及围绕“主线脉络 / 当前目标”的双层剧情追踪。
 
 <p>
+  <a href="https://xiuxian.bins.blog/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/在线体验-修仙世界-3b82f6?style=for-the-badge" alt="在线体验" />
+  </a>
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction" target="_blank" rel="noopener noreferrer">
     <img src="https://vercel.com/button" alt="Deploy with Vercel" />
   </a>
