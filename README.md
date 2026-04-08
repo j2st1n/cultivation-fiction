@@ -6,10 +6,13 @@
 
 <p>
   <a href="https://xiuxian.bins.blog/" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/在线体验-修仙世界-3b82f6?style=for-the-badge" alt="在线体验" />
+    <img src="https://img.shields.io/badge/在线体验-修仙世界-3b82f6?style=for-the-badge&logo=bookstack&logoColor=white" alt="在线体验" />
+  </a>
+  <a href="https://github.com/j2st1n/cultivation-fiction" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/GitHub-仓库-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub 仓库" />
   </a>
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction" target="_blank" rel="noopener noreferrer">
-    <img src="https://vercel.com/button" alt="Deploy with Vercel" />
+    <img src="https://img.shields.io/badge/Vercel-一键部署-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel 一键部署" />
   </a>
 </p>
 
