@@ -7,7 +7,7 @@ import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { validateApiConfiguration } from '@/app/lib/apiConfig';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRealmStage, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -277,25 +277,39 @@ function ThemedStoryMarkdown({ content, themeClass }: { content: string; themeCl
 function applyResponseStateUpdates({
   text,
   currentRealm,
+  currentRealmStage,
+  currentLocation,
+  visitedLocations,
   mainStoryArc,
   currentObjective,
   recentProgress,
   keyClues,
   advanceRealm,
+  updatePlayer,
   updateWorld,
 }: {
   text: string;
   currentRealm: CultivationRealm;
+  currentRealmStage?: string;
+  currentLocation: string;
+  visitedLocations: string[];
   mainStoryArc: string;
   currentObjective: string;
   recentProgress: string;
   keyClues: string[];
   advanceRealm: (newRealm: import('@/app/types/game').CultivationRealm) => void;
+  updatePlayer: (updates: Partial<import('@/app/types/game').PlayerAttributes>) => void;
   updateWorld: (updates: Partial<import('@/app/types/game').WorldState>) => void;
 }) {
   const nextRealm = detectRealmUpgrade(text);
+  const nextLocation = extractCurrentLocation(text);
+  const nextRealmStage = extractRealmStage(text);
   if (shouldAdvanceRealm(currentRealm, nextRealm)) {
     advanceRealm(nextRealm);
+  }
+
+  if (shouldUpdateRealmStage(nextRealmStage, currentRealmStage)) {
+    updatePlayer({ realmStage: nextRealmStage });
   }
 
   const nextArc = extractMainStoryArc(text);
@@ -303,6 +317,11 @@ function applyResponseStateUpdates({
   const nextProgress = extractRecentProgress(text);
   const nextClues = extractKeyClues(text);
   const updates: Partial<import('@/app/types/game').WorldState> = {};
+
+  if (shouldUpdateCurrentLocation(nextLocation, currentLocation)) {
+    updates.currentLocation = nextLocation;
+    updates.visitedLocations = Array.from(new Set([...visitedLocations, currentLocation, nextLocation].filter(Boolean)));
+  }
 
   if (shouldUpdateStoryArc(nextArc, mainStoryArc)) {
     updates.mainStoryArc = nextArc;
@@ -357,6 +376,7 @@ function GameScreen() {
   
   const { api, isValidated, readingTheme } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
+  const displayRealm = player.realmStage ? `${player.realm}${player.realmStage}` : player.realm;
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
@@ -402,11 +422,15 @@ function GameScreen() {
     applyResponseStateUpdates({
       text,
       currentRealm: player.realm,
+      currentRealmStage: player.realmStage,
+      currentLocation: world.currentLocation,
+      visitedLocations: world.visitedLocations,
       mainStoryArc: world.mainStoryArc,
       currentObjective: world.currentObjective,
       recentProgress: world.recentProgress,
       keyClues: world.keyClues,
       advanceRealm,
+      updatePlayer,
       updateWorld,
     });
 
@@ -789,7 +813,7 @@ function GameScreen() {
             <div className="flex min-w-0 items-center gap-2 text-sm">
               <span className={`max-w-[7rem] truncate ${theme.name}`}>{player.name}</span>
               <span className={`px-2 py-1 rounded whitespace-nowrap text-xs ${theme.realm}`}>
-                {player.realm}
+                {displayRealm}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -818,7 +842,7 @@ function GameScreen() {
               <GitHubIconLink className="px-1" />
               <span className={`max-w-[7rem] truncate ${theme.name}`}>{player.name}</span>
               <span className={`px-2 py-1 rounded whitespace-nowrap ${theme.realm}`}>
-                {player.realm}
+                {displayRealm}
               </span>
               <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)} themeClass={theme.iconButton}>
                 <BookOpen size={18} strokeWidth={1.5} />
@@ -853,9 +877,8 @@ function GameScreen() {
       {showWorldPanel && (
         <WorldPanel 
           onClose={() => setShowWorldPanel(false)}
-          player={player}
+          player={{ ...player, displayRealm }}
           world={world}
-          storyProgress={storyProgress}
         />
       )}
 
@@ -1008,17 +1031,16 @@ function WorldPanel({
   onClose, 
   player, 
   world, 
-  storyProgress 
 }: { 
   onClose: () => void; 
   player: any; 
   world: any; 
-  storyProgress: number; 
 }) {
   const { readingTheme } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const currentRealm = REALMS.find(r => r.name === player.realm);
   const realmIndex = REALMS.findIndex(r => r.name === player.realm);
+  const displayRealm = player.displayRealm || player.realm;
   
   return (
     <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
@@ -1041,23 +1063,19 @@ function WorldPanel({
             </div>
             <div className="flex justify-between">
               <span className={theme.panelSubtle}>境界</span>
-              <span className="text-purple-300">{player.realm}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className={theme.panelSubtle}>年龄</span>
-              <span className={theme.panelText}>{player.age}岁</span>
+              <span className="text-purple-300">{displayRealm}</span>
             </div>
             <div className="flex justify-between">
               <span className={theme.panelSubtle}>当前地点</span>
               <span className={theme.panelText}>{world.currentLocation}</span>
             </div>
             <div className="flex justify-between">
-              <span className={theme.panelSubtle}>已访问</span>
-              <span className={theme.panelText}>{world.visitedLocations.length}处</span>
+              <span className={theme.panelSubtle}>最近进展</span>
+              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.recentProgress || '等待新的推进'}</span>
             </div>
             <div className="flex justify-between">
-              <span className={theme.panelSubtle}>剧情进度</span>
-              <span className={theme.panelText}>{storyProgress}</span>
+              <span className={theme.panelSubtle}>已知地点</span>
+              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.visitedLocations.join('、') || world.currentLocation}</span>
             </div>
           </div>
         </div>
@@ -1076,7 +1094,7 @@ function WorldPanel({
                       : `${theme.userCard}`
                 }`}
               >
-                <div className="font-medium">{realm.name}</div>
+                <div className="font-medium">{realm.name}{idx === realmIndex && player.realmStage ? ` · ${player.realmStage}` : ''}</div>
                 <div className={`text-xs ${theme.panelSubtle}`}>{realm.desc}</div>
               </div>
             ))}
@@ -1193,9 +1211,10 @@ function SavePanel({ onClose }: { onClose: () => void }) {
       .filter((message) => message.role === 'assistant')
       .map((message) => sanitizeNovelContent(message.content))
       .filter((message) => message.length > 0);
+    const exportRealm = player.realmStage ? `${player.realm}${player.realmStage}` : player.realm;
 
     let content = `《修仙世界》\n`;
-    content += `角色：${player.name} | 境界：${player.realm} | 地点：${world.currentLocation}\n`;
+    content += `角色：${player.name} | 境界：${exportRealm} | 地点：${world.currentLocation}\n`;
     content += `存档：${slot.name} | ${new Date(slot.createdAt).toLocaleString('zh-CN')}\n`;
     content += `${'='.repeat(40)}\n\n`;
 
@@ -1221,7 +1240,7 @@ function SavePanel({ onClose }: { onClose: () => void }) {
         name: slot.name,
         createdAt: slot.createdAt,
         player: slot.gameState.player.name,
-        realm: slot.gameState.player.realm,
+        realm: slot.gameState.player.realmStage ? `${slot.gameState.player.realm}${slot.gameState.player.realmStage}` : slot.gameState.player.realm,
         location: slot.gameState.world.currentLocation,
       },
       exportType: 'json',

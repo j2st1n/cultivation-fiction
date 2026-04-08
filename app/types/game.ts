@@ -18,6 +18,7 @@ export interface PlayerAttributes {
   name: string;
   gender: Gender;
   realm: CultivationRealm;
+  realmStage?: string;
   age: number;
   spirit: number;      // 灵根资质 1-100
   fortune: number;     // 气运 1-100

@@ -115,24 +115,75 @@ export function stripStoryStateBlock(text: string): string {
   return stripThinkBlocks(text).replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
 }
 
-export function extractStoryState(text: string): { mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
+export function extractStoryState(text: string): { currentLocation: string; realmStage: string; mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
   const match = text.match(/【剧情状态】([\s\S]*)$/);
   if (!match) {
-    return { mainStoryArc: '', currentObjective: '', recentProgress: '', keyClues: [] };
+    return { currentLocation: '', realmStage: '', mainStoryArc: '', currentObjective: '', recentProgress: '', keyClues: [] };
   }
 
   const stateBlock = match[1];
+  const locationMatch = stateBlock.match(/当前地点:\s*([^\n]+)/);
+  const realmStageMatch = stateBlock.match(/境界层数:\s*([^\n]+)/);
   const arcMatch = stateBlock.match(/主线脉络:\s*([^\n]+)/);
   const objectiveMatch = stateBlock.match(/当前目标:\s*([^\n]+)/);
   const progressMatch = stateBlock.match(/最近进展:\s*([^\n]+)/);
   const cluesMatch = stateBlock.match(/关键线索:\s*([^\n]+)/);
 
   return {
+    currentLocation: locationMatch?.[1]?.trim() || '',
+    realmStage: realmStageMatch?.[1]?.trim() || '',
     mainStoryArc: arcMatch?.[1]?.trim() || '',
     currentObjective: objectiveMatch?.[1]?.trim() || '',
     recentProgress: progressMatch?.[1]?.trim() || '',
     keyClues: cluesMatch?.[1]?.split(/[、，,]/).map((clue) => clue.trim()).filter(Boolean) || [],
   };
+}
+
+export function extractCurrentLocation(text: string): string {
+  const structuredState = extractStoryState(text);
+  if (structuredState.currentLocation && structuredState.currentLocation !== '无') {
+    return structuredState.currentLocation;
+  }
+
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
+  const patterns = [
+    /来到([^\n。！？]+)/,
+    /身处([^\n。！？]+)/,
+    /位于([^\n。！？]+)/,
+    /踏入([^\n。！？]+)/,
+    /进入([^\n。！？]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = storyPart.match(pattern);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return '';
+}
+
+export function extractRealmStage(text: string): string {
+  const structuredState = extractStoryState(text);
+  if (structuredState.realmStage && structuredState.realmStage !== '无') {
+    return structuredState.realmStage;
+  }
+
+  const storyPart = stripInteractiveBlocks(text) || text.trim();
+  const patterns = [
+    /(第一层|第二层|第三层|第四层|第五层|第六层|第七层|第八层|第九层)/,
+    /(初期|中期|后期|巅峰|大圆满)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = storyPart.match(pattern);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return '';
 }
 
 export function detectRealmUpgrade(text: string): CultivationRealm | null {
@@ -309,6 +360,20 @@ export function shouldUpdateRecentProgress(nextProgress: string, currentProgress
   if (nextProgress === currentProgress) return false;
   if (nextProgress.includes('最近进展正在形成')) return false;
   return nextProgress.length >= 8;
+}
+
+export function shouldUpdateCurrentLocation(nextLocation: string, currentLocation: string): boolean {
+  if (!nextLocation.trim()) return false;
+  if (nextLocation === currentLocation) return false;
+  if (nextLocation.length < 2) return false;
+  return true;
+}
+
+export function shouldUpdateRealmStage(nextStage: string, currentStage?: string): boolean {
+  if (!nextStage.trim()) return false;
+  if (nextStage === '无') return false;
+  if (nextStage === (currentStage || '')) return false;
+  return true;
 }
 
 export function mergeKeyClues(currentClues: string[], nextClues: string[]): string[] {
