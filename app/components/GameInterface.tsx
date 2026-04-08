@@ -23,7 +23,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.5.3';
+const APP_VERSION = '0.5.4';
 const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
@@ -567,6 +567,30 @@ function GameScreen() {
     setScrollDirection(null);
   }, [navigableMessageIds.length]);
 
+  const getViewportAnchorIndex = () => {
+    if (typeof window === 'undefined' || navigableMessageIds.length === 0) {
+      return -1;
+    }
+
+    const anchorTargetY = 140;
+    let bestIndex = navigableMessageIds.length - 1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    navigableMessageIds.forEach((messageId, index) => {
+      const node = messageAnchorRefs.current[messageId];
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      const distance = Math.abs(rect.top - anchorTargetY);
+
+      if (rect.top <= window.innerHeight && rect.bottom >= 0 && distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+
+    return bestIndex;
+  };
+
   const scrollToAnchorByIndex = (targetIndex: number) => {
     const clampedIndex = Math.max(0, Math.min(targetIndex, navigableMessageIds.length - 1));
     const targetId = navigableMessageIds[clampedIndex];
@@ -578,7 +602,10 @@ function GameScreen() {
 
   const scrollToPreviousAnchor = () => {
     if (navigableMessageIds.length === 0) return;
-    const baseIndex = scrollDirection === 'up' ? currentAnchorIndex : navigableMessageIds.length - 1;
+    const viewportIndex = getViewportAnchorIndex();
+    const baseIndex = scrollDirection === 'up'
+      ? Math.min(currentAnchorIndex, viewportIndex === -1 ? currentAnchorIndex : viewportIndex)
+      : (viewportIndex === -1 ? navigableMessageIds.length - 1 : viewportIndex);
     const nextIndex = Math.max(0, baseIndex - 1);
     setScrollDirection('up');
     scrollToAnchorByIndex(nextIndex);
@@ -586,9 +613,10 @@ function GameScreen() {
 
   const scrollToNextAnchor = () => {
     if (navigableMessageIds.length === 0) return;
+    const viewportIndex = getViewportAnchorIndex();
     const baseIndex = scrollDirection === 'down'
-      ? currentAnchorIndex
-      : Math.max(0, Math.min(currentAnchorIndex, navigableMessageIds.length - 1));
+      ? Math.max(currentAnchorIndex, viewportIndex)
+      : Math.max(0, viewportIndex);
     const nextIndex = Math.min(navigableMessageIds.length - 1, baseIndex + 1);
     setScrollDirection('down');
     scrollToAnchorByIndex(nextIndex);
