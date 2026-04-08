@@ -41,6 +41,8 @@ const INITIAL_WORLD: WorldState = {
   currentScene: 'start',
   mainStoryArc: '',
   currentObjective: '',
+  recentProgress: '',
+  keyClues: [],
   visitedLocations: ['青云镇'],
   metCharacters: [],
   plotFlags: {},

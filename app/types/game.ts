@@ -31,6 +31,8 @@ export interface WorldState {
   currentScene: string;
   mainStoryArc: string;
   currentObjective: string;
+  recentProgress: string;
+  keyClues: string[];
   visitedLocations: string[];
   metCharacters: string[];
   plotFlags: Record<string, boolean>;
