@@ -23,7 +23,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.5.2';
+const APP_VERSION = '0.5.3';
 const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
@@ -325,7 +325,9 @@ function applyResponseStateUpdates({
 
   if (shouldUpdateCurrentLocation(nextLocation, currentLocation)) {
     updates.currentLocation = nextLocation;
-    updates.visitedLocations = Array.from(new Set([...visitedLocations, currentLocation, nextLocation].filter(Boolean)));
+    const nextCoarseLocation = getCoarseLocationLabel(nextLocationState.currentRegion, nextLocationState.currentArea, nextLocationState.currentLocation) || nextLocation;
+    const currentCoarseLocation = getCoarseLocationLabel(currentRegion, currentArea, currentLocation) || currentLocation;
+    updates.visitedLocations = Array.from(new Set([...visitedLocations, currentCoarseLocation, nextCoarseLocation].filter(Boolean))).slice(-6);
   }
 
   if (shouldUpdateLocationField(nextLocationState.currentRegion, currentRegion)) {
@@ -395,6 +397,7 @@ function GameScreen() {
   const displayRealm = normalizedRealmStage ? `${player.realm}${normalizedRealmStage}` : player.realm;
   const displayLocation = composeLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
   const coarseLocation = getCoarseLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
+  const keyLocations = Array.from(new Set((world.visitedLocations || []).map((location) => location.trim()).filter(Boolean))).slice(-6);
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
@@ -410,6 +413,7 @@ function GameScreen() {
   const [showBackToRecent, setShowBackToRecent] = useState(false);
   const [showScrollControlsOverlay, setShowScrollControlsOverlay] = useState(false);
   const [scrollButtonOffset, setScrollButtonOffset] = useState({ x: 0, y: 0 });
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
   const messageAnchorRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -558,6 +562,11 @@ function GameScreen() {
     .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
     .map((msg) => msg.id);
 
+  useEffect(() => {
+    setCurrentAnchorIndex(navigableMessageIds.length - 1);
+    setScrollDirection(null);
+  }, [navigableMessageIds.length]);
+
   const scrollToAnchorByIndex = (targetIndex: number) => {
     const clampedIndex = Math.max(0, Math.min(targetIndex, navigableMessageIds.length - 1));
     const targetId = navigableMessageIds[clampedIndex];
@@ -569,13 +578,20 @@ function GameScreen() {
 
   const scrollToPreviousAnchor = () => {
     if (navigableMessageIds.length === 0) return;
-    const nextIndex = currentAnchorIndex <= 0 ? navigableMessageIds.length - 2 : currentAnchorIndex - 1;
+    const baseIndex = scrollDirection === 'up' ? currentAnchorIndex : navigableMessageIds.length - 1;
+    const nextIndex = Math.max(0, baseIndex - 1);
+    setScrollDirection('up');
     scrollToAnchorByIndex(nextIndex);
   };
 
-  const scrollToBottom = () => {
-    bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    setCurrentAnchorIndex(navigableMessageIds.length - 1);
+  const scrollToNextAnchor = () => {
+    if (navigableMessageIds.length === 0) return;
+    const baseIndex = scrollDirection === 'down'
+      ? currentAnchorIndex
+      : Math.max(0, Math.min(currentAnchorIndex, navigableMessageIds.length - 1));
+    const nextIndex = Math.min(navigableMessageIds.length - 1, baseIndex + 1);
+    setScrollDirection('down');
+    scrollToAnchorByIndex(nextIndex);
   };
 
   const clampScrollButtonOffset = useCallback((nextX: number, nextY: number) => {
@@ -1032,7 +1048,7 @@ function GameScreen() {
             </ScrollJumpButton>
           )}
           {!isNearBottom && (
-            <ScrollJumpButton title="回到最下方" onClick={scrollToBottom} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
+            <ScrollJumpButton title="前往下一段对话" onClick={scrollToNextAnchor} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
               <ChevronDown size={20} strokeWidth={1.8} />
             </ScrollJumpButton>
           )}
@@ -1083,6 +1099,9 @@ function WorldPanel({
   const normalizedRealmStage = player.realmStage && player.realmStage.startsWith(player.realm)
     ? player.realmStage.slice(player.realm.length).trim()
     : player.realmStage;
+  const keyLocations = Array.from(new Set((world.visitedLocations || []).map((location: string) => location.trim()).filter(Boolean)));
+  const displayedLocations = keyLocations.slice(-5);
+  const hiddenLocationCount = Math.max(0, keyLocations.length - displayedLocations.length);
   
   return (
     <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
@@ -1112,8 +1131,8 @@ function WorldPanel({
               <span className={theme.panelText}>{world.displayLocation || world.currentLocation}</span>
             </div>
             <div className="flex justify-between">
-              <span className={theme.panelSubtle}>已知地点</span>
-              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.visitedLocations.join('、') || world.displayLocation || world.currentLocation}</span>
+              <span className={theme.panelSubtle}>关键地点</span>
+              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{displayedLocations.join('、') || world.displayLocation || world.currentLocation}{hiddenLocationCount > 0 ? ` 等${keyLocations.length}处` : ''}</span>
             </div>
           </div>
         </div>
