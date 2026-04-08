@@ -7,7 +7,7 @@ import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { validateApiConfiguration } from '@/app/lib/apiConfig';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -1179,7 +1179,7 @@ function SavePanel({ onClose }: { onClose: () => void }) {
 }
 
 function sanitizeNovelContent(content: string): string {
-  return content
+  return stripThinkBlocks(content)
     .replace(/\n?【剧情状态】[\s\S]*$/g, '')
     .replace(/\n?【选项】[\s\S]*?(?=\n?【自由输入】|$)/g, '')
     .replace(/\n?【自由输入】.*$/g, '')

@@ -98,8 +98,12 @@ export function checkRequiresInput(text: string): boolean {
   return text.includes('【自由输入】') || text.includes('请描述你的行动');
 }
 
+export function stripThinkBlocks(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 export function stripInteractiveBlocks(text: string): string {
-  return text
+  return stripThinkBlocks(text)
     .replace(/\n?【选项】[\s\S]*?(?=\n?【自由输入】|\n?【剧情状态】|$)/g, '')
     .replace(/\n?【自由输入】.*?(?=\n?【剧情状态】|$)/g, '')
     .replace(/\n?【剧情状态】[\s\S]*$/g, '')
@@ -108,7 +112,7 @@ export function stripInteractiveBlocks(text: string): string {
 }
 
 export function stripStoryStateBlock(text: string): string {
-  return text.replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
+  return stripThinkBlocks(text).replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
 }
 
 export function extractStoryState(text: string): { mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
