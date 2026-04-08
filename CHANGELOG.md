@@ -6,6 +6,12 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-04-08
+
+### Changed
+- Reading arrows now step through conversation anchors more predictably instead of stalling after one jump
+- World panel location history was reframed as coarse-grained key locations so it stays useful as the list grows
+
 ## [0.5.2] - 2026-04-08
 
 ### Changed
