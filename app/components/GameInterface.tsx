@@ -21,7 +21,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.3.1';
+const APP_VERSION = '0.3.2';
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -474,37 +474,66 @@ function GameScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100">
       <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-          <div className="flex items-center justify-between gap-3 min-w-0">
-            <h1 className="shrink-0 whitespace-nowrap text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+        <div className="max-w-4xl mx-auto px-4 py-3 space-y-3 sm:space-y-0">
+          <div className="flex items-center justify-between gap-3 sm:hidden">
+            <h1 className="shrink-0 whitespace-nowrap text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
               修仙世界
             </h1>
-            <div className="flex items-center gap-2 sm:hidden">
+            <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500">v{APP_VERSION}</span>
               <BlogIconLink className="px-1" />
               <GitHubIconLink className="px-1" />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
-            <span className="hidden sm:inline text-xs text-slate-500">v{APP_VERSION}</span>
-            <BlogIconLink className="hidden sm:inline-flex px-1" />
-            <GitHubIconLink className="hidden sm:inline-flex px-1" />
-            <span className="max-w-[7rem] truncate text-slate-400">{player.name}</span>
-            <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300 whitespace-nowrap">
-              {player.realm}
-            </span>
-            <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
-              <BookOpen size={18} strokeWidth={1.5} />
-            </HeaderIconButton>
-            <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
-              <Globe size={18} strokeWidth={1.5} />
-            </HeaderIconButton>
-            <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
-              <Settings size={18} strokeWidth={1.5} />
-            </HeaderIconButton>
-            <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
-              <Save size={18} strokeWidth={1.5} />
-            </HeaderIconButton>
+
+          <div className="flex items-center justify-between gap-3 sm:hidden">
+            <div className="flex min-w-0 items-center gap-2 text-sm">
+              <span className="max-w-[7rem] truncate text-slate-400">{player.name}</span>
+              <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300 whitespace-nowrap text-xs">
+                {player.realm}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
+                <BookOpen size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
+                <Globe size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
+                <Settings size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
+                <Save size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex sm:items-center sm:justify-between sm:gap-3">
+            <h1 className="shrink-0 whitespace-nowrap text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+              修仙世界
+            </h1>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-xs text-slate-500">v{APP_VERSION}</span>
+              <BlogIconLink className="px-1" />
+              <GitHubIconLink className="px-1" />
+              <span className="max-w-[7rem] truncate text-slate-400">{player.name}</span>
+              <span className="px-2 py-1 bg-purple-900/50 rounded text-purple-300 whitespace-nowrap">
+                {player.realm}
+              </span>
+              <HeaderIconButton title="剧情" onClick={() => setShowStoryPanel(true)}>
+                <BookOpen size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)}>
+                <Globe size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)}>
+                <Settings size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+              <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)}>
+                <Save size={18} strokeWidth={1.5} />
+              </HeaderIconButton>
+            </div>
           </div>
         </div>
       </header>
