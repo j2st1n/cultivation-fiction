@@ -1,30 +1,30 @@
-# Roadmap
+# 路线图
 
-## Near Term
+## 近期目标
 
-- Stabilize first-run onboarding flow
-- Improve long-session narrative coherence around main story arcs and current objectives
-- Surface recent clues and discovered context alongside the new layered story tracker
-- Make save/load UX clearer for returning players
+- 稳定首次进入与新手引导流程
+- 提升长对话下围绕“主线脉络 / 当前目标”的叙事一致性
+- 在剧情面板中进一步展示线索、近期进展与发现的信息
+- 继续优化存档、导入导出与回读体验
 
-## Story Systems
+## 剧情系统
 
-- Multi-arc quest progression
-- Better transition rules between long-term story arcs and short-term objectives
-- Better faction reactions and reputation tracking
-- More visible consequences from user actions
-- Dynamic supporting characters with stronger memory
+- 支持多阶段主线推进
+- 优化长期主线脉络与短期当前目标之间的过渡规则
+- 增强派系反应、立场反馈与关系变化
+- 让玩家行为后果在剧情中更清晰地体现出来
+- 让关键 NPC 拥有更稳定的记忆与持续性
 
-## Productization
+## 项目化建设
 
-- Public-facing landing content and screenshots
-- Better release notes and milestone tracking
-- Improved issue triage and contribution flow
-- More deployment guidance for self-hosting
+- 增加对外展示内容与截图素材
+- 完善 release notes、版本节奏与里程碑整理
+- 优化 issue 分流、PR 协作和项目维护流程
+- 补充更多静态部署与托管说明
 
-## Technical
+## 技术方向
 
-- Stronger parsing around AI-generated options and quest extraction
-- More resilient local state transitions
-- Better diagnostics for invalid API/model configuration
-- Small automated checks for story/state regressions
+- 强化 AI 选项解析、剧情状态提取与目标识别
+- 提升本地状态切换与恢复的稳定性
+- 增强无效 API / 模型配置时的诊断提示
+- 增加针对剧情状态与阅读体验的小型自动化检查
