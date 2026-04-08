@@ -1,161 +1,14 @@
-# Cultivation Fiction
+# 修仙世界（Cultivation Fiction）
 
-[中文说明](#cultivation-fiction-中文说明)
+一个基于 AI 的网页修仙互动小说游戏。
 
-AI-powered interactive cultivation novel game for the web.
-
-Players can start a new run with a custom name, gender, and AI provider, then experience an open-ended xianxia story with branching choices, free-form input, local save data, dynamic AI-generated openings, and a layered story tracker built around 主线脉络 and 当前目标.
+玩家可以自定义昵称、性别和 AI 提供方，在浏览器中体验开放式修仙剧情。每次新开局都可以生成不同的背景与长期剧情方向，支持选项推进与自由输入混合交互，并提供本地存档、导出能力，以及围绕“主线脉络 / 当前目标”的双层剧情追踪。
 
 <p>
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fj2st1n%2Fcultivation-fiction&project-name=cultivation-fiction&repository-name=cultivation-fiction" target="_blank" rel="noopener noreferrer">
     <img src="https://vercel.com/button" alt="Deploy with Vercel" />
   </a>
 </p>
-
-## Highlights
-
-- Dynamic AI-generated opening background and long-term story direction for each new run
-- Mixed interaction mode with structured choices and free input
-- Dedicated 剧情 panel with separate 主线脉络 and 当前目标
-- Three reading themes optimized for long-form reading: 夜幕, 青竹, and 纸卷
-- In-browser save system with TXT novel export and JSON save import/export
-- Configurable AI endpoint, model selection, model fetch, and connection validation
-- Static deployment target for Vercel and Cloudflare Pages
-- Client-side API key usage with no server-side key storage in this project
-- Markdown rendering for assistant story output
-
-## Current Status
-
-This project is active and intended for continued iteration.
-
-Current priorities include:
-
-- improving long-conversation narrative consistency with layered story state
-- surfacing more structured world state, story arc, and objective tracking
-- polishing the onboarding and save/load experience
-- strengthening project docs and collaboration workflows
-
-See [ROADMAP.md](./ROADMAP.md) for planned work.
-
-## Demo Flow
-
-1. Open the app
-2. Choose a nickname and gender
-3. Configure your AI endpoint, API key, and model
-4. Validate the connection
-5. Enter the game and receive a unique AI-generated opening
-6. Pick your preferred reading theme in settings if needed
-7. Follow 主线脉络 and 当前目标 in the dedicated 剧情 panel
-8. Progress using options or your own custom actions
-
-## Stack
-
-- Next.js 16
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Zustand
-
-## Project Structure
-
-```text
-app/
-  components/      UI and gameplay screens
-  lib/             AI prompt logic, parsing, helpers
-  store/           Zustand state stores
-  types/           Shared TypeScript types
-public/            Static assets
-```
-
-## Local Development
-
-```bash
-npm install
-npm run dev
-```
-
-Local static preview:
-
-```bash
-npm run build
-npm run preview
-```
-
-The project is designed for static hosting and no longer ships Docker deployment files.
-
-## Deployment
-
-### Vercel
-
-Use the deploy button above or import the repository manually.
-
-If Vercel shows an Output Directory field, leave it empty or use the platform default unless you explicitly need `out`.
-
-### Cloudflare Pages
-
-Use:
-
-- Build command: `npm run build`
-- Output directory: `out`
-
-This project is designed around static export.
-
-More details: [DEPLOY.md](./DEPLOY.md)
-
-## AI Configuration Notes
-
-- Endpoint should be a base OpenAI-compatible API URL such as `https://api.openai.com/v1`
-- API keys are intentionally kept in browser memory and are not committed to the repo
-- Model lists can be fetched from the provider and validated before entering the game
-
-## Save Data
-
-- TXT export creates a more novel-like text file with softer chapter chunking and lightweight chapter subtitles
-- JSON export preserves structured save data
-- JSON import restores prior game state
-
-## Security Model
-
-This repository is a static web app. It does not proxy AI requests through a backend.
-
-That means:
-
-- users provide and use their own API keys locally
-- this repo should never contain real secrets
-- deployment should remain static unless the architecture is intentionally changed later
-
-## Collaboration
-
-- Bug reports: use the GitHub bug template
-- Feature requests: use the GitHub feature template
-- Pull requests: follow [CONTRIBUTING.md](./CONTRIBUTING.md)
-- Security reporting: see [SECURITY.md](./SECURITY.md)
-
-## Versioning
-
-This project is moving toward lightweight semantic versioning.
-
-Current version: `0.4.1`
-
-Release notes will be tracked in [CHANGELOG.md](./CHANGELOG.md).
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
-
-## Community Health
-
-- Contribution guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
-- Security policy: [SECURITY.md](./SECURITY.md)
-- Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
-
----
-
-# Cultivation Fiction 中文说明
-
-一个基于 AI 的网页修仙互动小说游戏。
-
-玩家可以自定义昵称、性别和 AI 提供方，在浏览器中体验开放式修仙剧情。每次新开局都可以生成不同的背景与长期剧情方向，支持选项推进与自由输入混合交互，并提供本地存档、导出能力，以及围绕“主线脉络 / 当前目标”的双层剧情追踪。
 
 ## 项目亮点
 
@@ -278,7 +131,7 @@ npm run preview
 
 ## 版本与发布
 
-项目正在逐步过渡到轻量语义化版本管理。
+项目采用轻量语义化版本管理。
 
 当前版本：`0.4.1`
 
