@@ -135,7 +135,7 @@ That means:
 
 This project is moving toward lightweight semantic versioning.
 
-Current version: `0.4.0`
+Current version: `0.4.1`
 
 Release notes will be tracked in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -280,7 +280,7 @@ npm run preview
 
 项目正在逐步过渡到轻量语义化版本管理。
 
-当前版本：`0.4.0`
+当前版本：`0.4.1`
 
 更新记录见：[CHANGELOG.md](./CHANGELOG.md)
 

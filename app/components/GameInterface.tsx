@@ -22,7 +22,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.4.1';
 
 const THEME_STYLES: Record<ReadingTheme, {
   app: string;
@@ -170,7 +170,7 @@ function GitHubIconLink({ className = '' }: { className?: string }) {
       rel="noopener noreferrer"
       aria-label="GitHub Repository"
       title="GitHub Repository"
-      className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
+      className={`inline-flex items-center justify-center transition-colors ${className}`.trim()}
     >
       <svg
         viewBox="0 0 24 24"
@@ -192,7 +192,7 @@ function BlogIconLink({ className = '' }: { className?: string }) {
       rel="noopener noreferrer"
       aria-label="bins.blog"
       title="bins.blog"
-      className={`inline-flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors ${className}`.trim()}
+      className={`inline-flex items-center justify-center transition-colors ${className}`.trim()}
     >
       <img
         src={BLOG_ICON_URL}

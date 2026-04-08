@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-07
+
+### Changed
+- Blog and GitHub icons now inherit the active reading theme styling more naturally instead of keeping a fixed slate-toned appearance
+
 ## [0.4.0] - 2026-04-07
 
 ### Added
