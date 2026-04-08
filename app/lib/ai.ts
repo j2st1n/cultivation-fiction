@@ -1,5 +1,6 @@
 import { useSettingsStore } from '@/app/store/settingsStore';
 import type { Message } from '@/app/types/game';
+import { buildChatCompletionsUrl } from '@/app/lib/apiConfig';
 
 export interface StreamCallbacks {
   onChunk: (text: string) => void;
@@ -18,10 +19,7 @@ export async function streamChat(
     return;
   }
 
-  let endpoint = api.endpoint;
-  if (!endpoint.includes('/chat/completions')) {
-    endpoint = endpoint.replace(/\/v1$/, '/v1/chat/completions');
-  }
+  const endpoint = buildChatCompletionsUrl(api.endpoint);
 
   const systemMessage: Message = {
     id: 'system',
@@ -123,6 +121,8 @@ function buildSystemPrompt(): string {
 5. 每次输出要包含：叙事内容 + 2-4个选项（除非玩家主动自由输入）
 6. **境界提升要明确**：当剧情达到一定程度，明确告诉玩家境界突破了，并解释突破的感受和收获
 7. 每次回复末尾都要附带一个简短的隐藏剧情状态块，用于系统提取长期主线、当前目标、最近进展与关键线索
+8. 正文结尾要自然停在悬念、结果、气氛或下一步局势上，不要额外写“你要选择”“立刻决定”“请选择”之类引导句
+9. 不要输出任何思考过程、推理标签或 <think> 标签内容
 
 ## 输出格式
 当提供选项时，使用以下格式：
@@ -145,5 +145,6 @@ C: [选项3描述]
 - 永远不要生成"TODO"或占位符内容
 - 保持叙事连贯，避免突兀的转折
 - 根据玩家当前境界调整描述的层次
-- 玩家自由度优先，不要过度引导`;
+- 玩家自由度优先，不要过度引导
+- 选项按钮会由界面承接，不要在正文里解释界面交互或催促玩家做选择`;
 }

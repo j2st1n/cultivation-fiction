@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
+import { validateApiConfiguration } from '@/app/lib/apiConfig';
 import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
@@ -1341,10 +1342,11 @@ function toChineseNumber(value: number): string {
 }
 
 function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
-  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated, readingTheme, setReadingTheme } = useSettingsStore();
+  const { api, updateApi, isValidated, availableModels, fetchModels, setValidated, readingTheme, setReadingTheme, rememberApiKey, setRememberApiKey, setAvailableModels } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [validationMessage, setValidationMessage] = useState('');
 
   const handleValidate = async () => {
     if (!api.endpoint || !api.apiKey) {
@@ -1353,33 +1355,32 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
     }
     setValidating(true);
     setValidationError('');
+    setValidationMessage('');
 
     try {
-      const baseUrl = api.endpoint.split('/v1')[0];
-      const response = await fetch(`${baseUrl}/v1/models`, {
-        headers: { 'Authorization': `Bearer ${api.apiKey}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const models = data.data?.map((m: { id: string }) => m.id) || [];
-        if (!api.model) {
-          updateApi({ model: models[0] || api.model });
-        }
-        setValidated(true);
-        setValidationError('');
-      } else {
-        setValidationError(`验证失败: ${response.status}`);
+      const { models } = await validateApiConfiguration(api.endpoint, api.apiKey);
+      setAvailableModels(models);
+      if (!api.model && models.length > 0) {
+        updateApi({ model: models[0] });
       }
-    } catch {
-      setValidationError('连接失败，请检查 Endpoint');
+      if (!api.model && models.length === 0) {
+        setValidationError('连接成功，但没有获取到可用模型，请手动填写模型名称');
+        setValidated(false);
+        return;
+      }
+      setValidated(true);
+      setValidationMessage(models.length > 0 ? `验证成功，已获取 ${models.length} 个模型` : '验证成功');
+    } catch (error) {
+      setValidated(false);
+      setValidationError(error instanceof Error ? error.message : '连接失败，请检查 Endpoint');
     } finally {
       setValidating(false);
     }
   };
 
-  const handleEndpointBlur = () => {
+  const handleEndpointBlur = async () => {
     if (api.endpoint && api.apiKey) {
-      fetchModels();
+      await fetchModels();
     }
   };
 
@@ -1431,6 +1432,7 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
                 <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
+                <p className={`mt-1 text-xs ${theme.panelSubtle}`}>支持直接填写基础地址、/v1、/models 或 /chat/completions，系统会自动归一化。</p>
               </div>
 
               <div>
@@ -1443,9 +1445,22 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
                 <p className="mt-1 text-xs text-amber-400">
-                  ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+                  ⚠️ API Key 默认不会持久保存。只有勾选下方选项后，才会保存在当前浏览器本地。
                 </p>
               </div>
+
+              <label className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${theme.iconButton}`}>
+                <input
+                  type="checkbox"
+                  checked={rememberApiKey}
+                  onChange={(e) => setRememberApiKey(e.target.checked)}
+                  className="mt-0.5 accent-cyan-500"
+                />
+                <span className="space-y-1">
+                  <span className={`block font-medium ${theme.panelText}`}>记住 API Key（可选）</span>
+                  <span className={`block text-xs ${theme.panelSubtle}`}>仅保存在当前浏览器本地存储中，适合你自己的受信设备；公共设备不建议开启。</span>
+                </span>
+              </label>
 
               <div>
                 <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
@@ -1470,7 +1485,16 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                     />
                   )}
                   <button
-                    onClick={fetchModels}
+                    onClick={async () => {
+                      setValidationError('');
+                      setValidationMessage('');
+                      try {
+                        await fetchModels();
+                        setValidationMessage('模型列表已刷新');
+                      } catch {
+                        setValidationError('获取模型失败，请检查 Endpoint、API Key 或网络连接');
+                      }
+                    }}
                     disabled={!api.endpoint || !api.apiKey}
                     className={`px-3 py-2 rounded-lg text-sm disabled:opacity-50 ${theme.iconButton}`}
                   >
@@ -1481,6 +1505,10 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
               {validationError && (
                 <p className="text-sm text-red-400">{validationError}</p>
+              )}
+
+              {!validationError && validationMessage && (
+                <p className="text-sm text-emerald-400">{validationMessage}</p>
               )}
 
               <button
@@ -1507,13 +1535,14 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
 
 function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
   const { updatePlayer } = useGameStore();
-  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated, readingTheme } = useSettingsStore();
+  const { api, updateApi, availableModels, fetchModels, setValidated, isValidated, readingTheme, rememberApiKey, setRememberApiKey, setAvailableModels } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
   const [step, setStep] = useState<'name' | 'api'>(initialStep);
   const [name, setName] = useState(generateInitialName);
   const [gender, setGender] = useState<'男' | '女'>('男');
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [validationMessage, setValidationMessage] = useState('');
 
   useEffect(() => {
     setStep(initialStep);
@@ -1539,32 +1568,32 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
     }
     setValidating(true);
     setValidationError('');
+    setValidationMessage('');
 
     try {
-      const baseUrl = api.endpoint.split('/v1')[0];
-      const response = await fetch(`${baseUrl}/v1/models`, {
-        headers: { 'Authorization': `Bearer ${api.apiKey}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const models = data.data?.map((m: { id: string }) => m.id) || [];
-        if (!api.model && models.length > 0) {
-          updateApi({ model: models[0] });
-        }
-        setValidated(true);
-      } else {
-        setValidationError(`验证失败: ${response.status}`);
+      const { models } = await validateApiConfiguration(api.endpoint, api.apiKey);
+      setAvailableModels(models);
+      if (!api.model && models.length > 0) {
+        updateApi({ model: models[0] });
       }
-    } catch {
-      setValidationError('连接失败，请检查 Endpoint');
+      if (!api.model && models.length === 0) {
+        setValidationError('连接成功，但没有获取到可用模型，请手动填写模型名称');
+        setValidated(false);
+        return;
+      }
+      setValidated(true);
+      setValidationMessage(models.length > 0 ? `验证成功，已获取 ${models.length} 个模型` : '验证成功');
+    } catch (error) {
+      setValidated(false);
+      setValidationError(error instanceof Error ? error.message : '连接失败，请检查 Endpoint');
     } finally {
       setValidating(false);
     }
   };
 
-  const handleEndpointBlur = () => {
+  const handleEndpointBlur = async () => {
     if (api.endpoint && api.apiKey) {
-      fetchModels();
+      await fetchModels();
     }
   };
 
@@ -1648,6 +1677,7 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
                 <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
+                <p className={`mt-1 text-xs ${theme.panelSubtle}`}>支持直接粘贴 /v1、/models 或 /chat/completions 地址，系统会自动归一化。</p>
               </div>
               <div>
                 <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
@@ -1659,9 +1689,21 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
                 <p className="mt-1 text-xs text-amber-400">
-                  ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+                  ⚠️ API Key 默认不会保存；仅在你主动勾选时写入当前浏览器本地存储。
                 </p>
               </div>
+              <label className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${theme.iconButton}`}>
+                <input
+                  type="checkbox"
+                  checked={rememberApiKey}
+                  onChange={(e) => setRememberApiKey(e.target.checked)}
+                  className="mt-0.5 accent-cyan-500"
+                />
+                <span className="space-y-1">
+                  <span className={`block font-medium ${theme.panelText}`}>记住 API Key（可选）</span>
+                  <span className={`block text-xs ${theme.panelSubtle}`}>仅建议在你自己的设备上启用。关闭后会立即清除已保存的 Key。</span>
+                </span>
+              </label>
               <div>
                 <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
                 <div className="flex gap-2">
@@ -1685,7 +1727,16 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
                     />
                   )}
                   <button
-                    onClick={fetchModels}
+                    onClick={async () => {
+                      setValidationError('');
+                      setValidationMessage('');
+                      try {
+                        await fetchModels();
+                        setValidationMessage('模型列表已刷新');
+                      } catch {
+                        setValidationError('获取模型失败，请检查 Endpoint、API Key 或网络连接');
+                      }
+                    }}
                     disabled={!api.endpoint || !api.apiKey}
                     className={`px-3 py-2 rounded-lg text-sm disabled:opacity-50 ${theme.iconButton}`}
                   >
@@ -1697,6 +1748,10 @@ function InitialSetup({ initialStep }: { initialStep: 'name' | 'api' }) {
 
             {validationError && (
               <p className="mt-3 text-sm text-red-400">{validationError}</p>
+            )}
+
+            {!validationError && validationMessage && (
+              <p className="mt-3 text-sm text-emerald-400">{validationMessage}</p>
             )}
 
             <button
