@@ -44,3 +44,13 @@ Use the GitHub templates for:
 ## Release Notes
 
 User-visible changes should also be reflected in [CHANGELOG.md](./CHANGELOG.md).
+
+## Versioning Rule
+
+Version updates are part of delivery, not an optional follow-up.
+
+- patch (`x.y.Z`): bug fixes, polish, layout fixes, rendering fixes, small UX adjustments
+- minor (`x.Y.z`): meaningful feature additions, new panels, state model upgrades, interaction-flow improvements
+- major (`X.y.z`): breaking product architecture shifts or intentionally incompatible redesigns
+
+When a change is pushed as a released iteration, update the visible app version, package metadata, and changelog together.

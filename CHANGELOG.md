@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-04-07
+
+### Changed
+- Mobile header now uses a clearer two-row layout with the title protected from compression and the utility controls grouped more cleanly on small screens
+
 ## [0.3.1] - 2026-04-07
 
 ### Changed
