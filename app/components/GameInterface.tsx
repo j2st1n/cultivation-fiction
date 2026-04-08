@@ -23,7 +23,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.5.4';
+const APP_VERSION = '0.5.5';
 const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
@@ -413,11 +413,9 @@ function GameScreen() {
   const [showBackToRecent, setShowBackToRecent] = useState(false);
   const [showScrollControlsOverlay, setShowScrollControlsOverlay] = useState(false);
   const [scrollButtonOffset, setScrollButtonOffset] = useState({ x: 0, y: 0 });
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
   const messageAnchorRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [currentAnchorIndex, setCurrentAnchorIndex] = useState(-1);
   const scrollControlsRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -562,17 +560,12 @@ function GameScreen() {
     .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
     .map((msg) => msg.id);
 
-  useEffect(() => {
-    setCurrentAnchorIndex(navigableMessageIds.length - 1);
-    setScrollDirection(null);
-  }, [navigableMessageIds.length]);
-
   const getViewportAnchorIndex = () => {
     if (typeof window === 'undefined' || navigableMessageIds.length === 0) {
       return -1;
     }
 
-    const anchorTargetY = 140;
+    const anchorTargetY = Math.max(120, window.innerHeight * 0.25);
     let bestIndex = navigableMessageIds.length - 1;
     let bestDistance = Number.POSITIVE_INFINITY;
 
@@ -597,28 +590,21 @@ function GameScreen() {
     if (!targetId) return;
 
     messageAnchorRefs.current[targetId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setCurrentAnchorIndex(clampedIndex);
   };
 
   const scrollToPreviousAnchor = () => {
     if (navigableMessageIds.length === 0) return;
     const viewportIndex = getViewportAnchorIndex();
-    const baseIndex = scrollDirection === 'up'
-      ? Math.min(currentAnchorIndex, viewportIndex === -1 ? currentAnchorIndex : viewportIndex)
-      : (viewportIndex === -1 ? navigableMessageIds.length - 1 : viewportIndex);
+    const baseIndex = viewportIndex === -1 ? navigableMessageIds.length - 1 : viewportIndex;
     const nextIndex = Math.max(0, baseIndex - 1);
-    setScrollDirection('up');
     scrollToAnchorByIndex(nextIndex);
   };
 
   const scrollToNextAnchor = () => {
     if (navigableMessageIds.length === 0) return;
     const viewportIndex = getViewportAnchorIndex();
-    const baseIndex = scrollDirection === 'down'
-      ? Math.max(currentAnchorIndex, viewportIndex)
-      : Math.max(0, viewportIndex);
+    const baseIndex = Math.max(0, viewportIndex);
     const nextIndex = Math.min(navigableMessageIds.length - 1, baseIndex + 1);
-    setScrollDirection('down');
     scrollToAnchorByIndex(nextIndex);
   };
 
