@@ -594,7 +594,7 @@ function GameScreen() {
               <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)} themeClass={theme.iconButton}>
                 <Globe size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
+              <HeaderIconButton title="设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
                 <Settings size={18} strokeWidth={1.5} />
               </HeaderIconButton>
               <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)} themeClass={theme.iconButton}>
@@ -621,7 +621,7 @@ function GameScreen() {
               <HeaderIconButton title="世界观" onClick={() => setShowWorldPanel(true)} themeClass={theme.iconButton}>
                 <Globe size={18} strokeWidth={1.5} />
               </HeaderIconButton>
-              <HeaderIconButton title="AI设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
+              <HeaderIconButton title="设置" onClick={() => setShowSettings(true)} themeClass={theme.iconButton}>
                 <Settings size={18} strokeWidth={1.5} />
               </HeaderIconButton>
               <HeaderIconButton title="存档" onClick={() => setShowSavePanel(true)} themeClass={theme.iconButton}>
@@ -1310,13 +1310,13 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
     <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
       <div className={`rounded-xl p-6 w-full max-w-lg ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className={`text-xl font-bold ${theme.panelText}`}>AI 设置</h2>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>设置</h2>
           <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className={`block text-sm mb-2 ${theme.name}`}>阅读主题</label>
+        <div className="space-y-6">
+          <section className={`rounded-xl p-4 ${theme.userCard}`}>
+            <h3 className={`text-sm font-semibold mb-3 ${theme.panelText}`}>阅读主题</h3>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { value: 'night', label: '夜幕' },
@@ -1337,77 +1337,84 @@ function SettingsPanel({ onClose, onReset }: { onClose: () => void; onReset: () 
                 </button>
               ))}
             </div>
-            <p className={`mt-2 text-xs ${theme.panelSubtle}`}>夜幕适合夜间阅读，青竹与纸卷更适合长时间护眼阅读。</p>
-          </div>
+            <p className={`mt-3 text-xs ${theme.panelSubtle}`}>夜幕适合夜间阅读，青竹与纸卷更适合长时间护眼阅读。</p>
+          </section>
 
-          <div>
-            <label className={`block text-sm mb-1 ${theme.name}`}>API Endpoint</label>
-            <input
-              type="text"
-              value={api.endpoint}
-              onChange={(e) => updateApi({ endpoint: e.target.value })}
-              onBlur={handleEndpointBlur}
-              placeholder="https://api.openai.com/v1"
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
-            />
-            <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
-          </div>
-          <div>
-            <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
-            <input
-              type="password"
-              value={api.apiKey}
-              onChange={(e) => updateApi({ apiKey: e.target.value })}
-              placeholder="sk-..."
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
-            />
-            <p className="mt-1 text-xs text-amber-400">
-              ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
-            </p>
-          </div>
-          <div>
-            <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
-            <div className="flex gap-2">
-              {availableModels.length > 0 ? (
-                <select
-                  value={api.model}
-                  onChange={(e) => updateApi({ model: e.target.value })}
-                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
-                >
-                  {availableModels.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              ) : (
+          <section className={`rounded-xl p-4 ${theme.userCard}`}>
+            <h3 className={`text-sm font-semibold mb-3 ${theme.panelText}`}>AI 设置</h3>
+            <div className="space-y-4">
+              <div>
+                <label className={`block text-sm mb-1 ${theme.name}`}>API Endpoint</label>
                 <input
                   type="text"
-                  value={api.model}
-                  onChange={(e) => updateApi({ model: e.target.value })}
-                  placeholder="选择或输入模型"
-                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
+                  value={api.endpoint}
+                  onChange={(e) => updateApi({ endpoint: e.target.value })}
+                  onBlur={handleEndpointBlur}
+                  placeholder="https://api.openai.com/v1"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
                 />
+                <p className={`mt-1 text-xs ${theme.panelSubtle}`}>填写 API 基础地址，如 https://api.openai.com/v1</p>
+              </div>
+
+              <div>
+                <label className={`block text-sm mb-1 ${theme.name}`}>API Key</label>
+                <input
+                  type="password"
+                  value={api.apiKey}
+                  onChange={(e) => updateApi({ apiKey: e.target.value })}
+                  placeholder="sk-..."
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
+                />
+                <p className="mt-1 text-xs text-amber-400">
+                  ⚠️ API Key 仅保存在当前浏览器内存中，刷新页面后需重新输入
+                </p>
+              </div>
+
+              <div>
+                <label className={`block text-sm mb-1 ${theme.name}`}>模型</label>
+                <div className="flex gap-2">
+                  {availableModels.length > 0 ? (
+                    <select
+                      value={api.model}
+                      onChange={(e) => updateApi({ model: e.target.value })}
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
+                    >
+                      {availableModels.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={api.model}
+                      onChange={(e) => updateApi({ model: e.target.value })}
+                      placeholder="选择或输入模型"
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none ${theme.input}`}
+                    />
+                  )}
+                  <button
+                    onClick={fetchModels}
+                    disabled={!api.endpoint || !api.apiKey}
+                    className={`px-3 py-2 rounded-lg text-sm disabled:opacity-50 ${theme.iconButton}`}
+                  >
+                    获取模型
+                  </button>
+                </div>
+              </div>
+
+              {validationError && (
+                <p className="text-sm text-red-400">{validationError}</p>
               )}
+
               <button
-                onClick={fetchModels}
-                disabled={!api.endpoint || !api.apiKey}
-                className="px-3 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm text-slate-300 disabled:opacity-50"
+                onClick={handleValidate}
+                disabled={validating || !api.endpoint || !api.apiKey}
+                className={`w-full py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${isValidated ? 'bg-green-600 text-white' : theme.primaryButton}`}
               >
-                获取模型
+                {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
               </button>
             </div>
-          </div>
-
-          {validationError && (
-            <p className="text-sm text-red-400">{validationError}</p>
-          )}
-
-          <button
-            onClick={handleValidate}
-            disabled={validating || !api.endpoint || !api.apiKey}
-            className={`w-full py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${isValidated ? 'bg-green-600 text-white' : theme.primaryButton}`}
-          >
-            {validating ? '验证中...' : isValidated ? '✓ 已验证' : '验证连接'}
-          </button>
+          </section>
         </div>
 
         <button
