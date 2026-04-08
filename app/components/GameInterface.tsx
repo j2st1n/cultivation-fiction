@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractMainStoryArc, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateStoryArc, stripStoryStateBlock } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, detectRealmUpgrade, extractCurrentObjective, extractKeyClues, extractMainStoryArc, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentObjective, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripStoryStateBlock } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -22,7 +22,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.4.1';
+const APP_VERSION = '0.5.0';
 
 const THEME_STYLES: Record<ReadingTheme, {
   app: string;
@@ -248,6 +248,8 @@ function applyResponseStateUpdates({
   currentRealm,
   mainStoryArc,
   currentObjective,
+  recentProgress,
+  keyClues,
   advanceRealm,
   updateWorld,
 }: {
@@ -255,6 +257,8 @@ function applyResponseStateUpdates({
   currentRealm: CultivationRealm;
   mainStoryArc: string;
   currentObjective: string;
+  recentProgress: string;
+  keyClues: string[];
   advanceRealm: (newRealm: import('@/app/types/game').CultivationRealm) => void;
   updateWorld: (updates: Partial<import('@/app/types/game').WorldState>) => void;
 }) {
@@ -265,6 +269,8 @@ function applyResponseStateUpdates({
 
   const nextArc = extractMainStoryArc(text);
   const nextObjective = extractCurrentObjective(text);
+  const nextProgress = extractRecentProgress(text);
+  const nextClues = extractKeyClues(text);
   const updates: Partial<import('@/app/types/game').WorldState> = {};
 
   if (shouldUpdateStoryArc(nextArc, mainStoryArc)) {
@@ -273,6 +279,15 @@ function applyResponseStateUpdates({
 
   if (shouldUpdateCurrentObjective(nextObjective, currentObjective)) {
     updates.currentObjective = nextObjective;
+  }
+
+  if (shouldUpdateRecentProgress(nextProgress, recentProgress)) {
+    updates.recentProgress = nextProgress;
+  }
+
+  const mergedClues = mergeKeyClues(keyClues, nextClues);
+  if (mergedClues.length !== keyClues.length) {
+    updates.keyClues = mergedClues;
   }
 
   if (Object.keys(updates).length > 0) {
@@ -351,6 +366,8 @@ function GameScreen() {
           currentRealm: player.realm,
           mainStoryArc: world.mainStoryArc,
           currentObjective: world.currentObjective,
+          recentProgress: world.recentProgress,
+          keyClues: world.keyClues,
           advanceRealm,
           updateWorld,
         });
@@ -398,6 +415,8 @@ function GameScreen() {
       world.currentLocation,
       world.mainStoryArc,
       world.currentObjective,
+      world.recentProgress,
+      world.keyClues,
       storyProgress
     );
     
@@ -422,6 +441,8 @@ function GameScreen() {
           currentRealm: player.realm,
           mainStoryArc: world.mainStoryArc,
           currentObjective: world.currentObjective,
+          recentProgress: world.recentProgress,
+          keyClues: world.keyClues,
           advanceRealm,
           updateWorld,
         });
@@ -458,6 +479,8 @@ function GameScreen() {
       world.currentLocation,
       world.mainStoryArc,
       world.currentObjective,
+      world.recentProgress,
+      world.keyClues,
       storyProgress
     );
     
@@ -476,6 +499,8 @@ function GameScreen() {
           currentRealm: player.realm,
           mainStoryArc: world.mainStoryArc,
           currentObjective: world.currentObjective,
+          recentProgress: world.recentProgress,
+          keyClues: world.keyClues,
           advanceRealm,
           updateWorld,
         });
@@ -521,6 +546,8 @@ function GameScreen() {
       world.currentLocation,
       world.mainStoryArc,
       world.currentObjective,
+      world.recentProgress,
+      world.keyClues,
       storyProgress
     );
     
@@ -543,6 +570,8 @@ function GameScreen() {
           currentRealm: player.realm,
           mainStoryArc: world.mainStoryArc,
           currentObjective: world.currentObjective,
+          recentProgress: world.recentProgress,
+          keyClues: world.keyClues,
           advanceRealm,
           updateWorld,
         });
@@ -901,8 +930,34 @@ function StoryPanel({
           </div>
         </div>
 
+        <div className="mb-6 mt-4">
+          <h3 className="text-cyan-400 font-bold mb-2">最近进展</h3>
+          <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
+            <p className={`text-sm leading-relaxed ${theme.panelText}`}>
+              {world.recentProgress || '最近进展正在形成，新的变化会随着剧情推进明确。'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-2">
+          <h3 className="text-cyan-400 font-bold mb-2">关键线索</h3>
+          <div className={`p-4 rounded-lg ${theme.streamingCard}`}>
+            {world.keyClues.length > 0 ? (
+              <ul className={`list-disc pl-5 text-sm space-y-1 ${theme.panelText}`}>
+                {world.keyClues.map((clue) => (
+                  <li key={clue}>{clue}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className={`text-sm leading-relaxed ${theme.panelText}`}>
+                暂无线索，随着剧情推进会逐步沉淀出更清晰的关键信息。
+              </p>
+            )}
+          </div>
+        </div>
+
         <p className={`mt-3 text-xs ${theme.panelSubtle}`}>
-          主线脉络负责保持长期一致性，当前目标用于追踪眼下该做什么。
+          主线脉络负责保持长期一致性，当前目标追踪眼下行动，最近进展与关键线索用于减少长对话中的叙事漂移。
         </p>
       </div>
     </div>

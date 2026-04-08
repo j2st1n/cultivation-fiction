@@ -58,6 +58,8 @@ export function buildContextMessage(
   location: string,
   mainStoryArc: string,
   currentObjective: string,
+  recentProgress: string,
+  keyClues: string[],
   storyProgress: number
 ): string {
   return `玩家信息：
@@ -66,13 +68,16 @@ export function buildContextMessage(
 - 当前地点：${location}
 - 主线脉络：${mainStoryArc || '尚在展开中'}
 - 当前目标：${currentObjective || '等待新的线索或行动方向'}
+- 最近进展：${recentProgress || '尚无新的阶段性进展'}
+- 关键线索：${keyClues.length > 0 ? keyClues.join('、') : '尚无线索'}
 - 故事进度：${storyProgress}
 
 请继续叙事，确保：
 1. 根据玩家选择的选项推进剧情
 2. 境界提升要有明确的修炼过程和考验
- 3. 保持主线脉络连续，不要遗忘长期目标
- 4. 当前目标要清晰，并能随着剧情自然推进`;
+  3. 保持主线脉络连续，不要遗忘长期目标
+  4. 当前目标要清晰，并能随着剧情自然推进
+  5. 最近进展与关键线索要前后呼应，不要无故丢失`;
 }
 
 export function parseChoicesFromResponse(text: string): string[] {
@@ -97,19 +102,23 @@ export function stripStoryStateBlock(text: string): string {
   return text.replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
 }
 
-export function extractStoryState(text: string): { mainStoryArc: string; currentObjective: string } {
+export function extractStoryState(text: string): { mainStoryArc: string; currentObjective: string; recentProgress: string; keyClues: string[] } {
   const match = text.match(/【剧情状态】([\s\S]*)$/);
   if (!match) {
-    return { mainStoryArc: '', currentObjective: '' };
+    return { mainStoryArc: '', currentObjective: '', recentProgress: '', keyClues: [] };
   }
 
   const stateBlock = match[1];
   const arcMatch = stateBlock.match(/主线脉络:\s*([^\n]+)/);
   const objectiveMatch = stateBlock.match(/当前目标:\s*([^\n]+)/);
+  const progressMatch = stateBlock.match(/最近进展:\s*([^\n]+)/);
+  const cluesMatch = stateBlock.match(/关键线索:\s*([^\n]+)/);
 
   return {
     mainStoryArc: arcMatch?.[1]?.trim() || '',
     currentObjective: objectiveMatch?.[1]?.trim() || '',
+    recentProgress: progressMatch?.[1]?.trim() || '',
+    keyClues: cluesMatch?.[1]?.split(/[、，,]/).map((clue) => clue.trim()).filter(Boolean) || [],
   };
 }
 
@@ -214,6 +223,53 @@ export function extractCurrentObjective(text: string): string {
   return objectiveSentence || '当前目标正在更新，新的行动方向会随着剧情推进明确。';
 }
 
+export function extractRecentProgress(text: string): string {
+  const structuredState = extractStoryState(text);
+  if (structuredState.recentProgress) {
+    return structuredState.recentProgress;
+  }
+
+  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const sentences = storyPart
+    .split(/(?<=[。！？])/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const progressSentence = [...sentences].reverse().find((sentence) =>
+    /发现|得知|进入|来到|遇见|完成|结束|取得|确认|查明|突破|脱身|找到/.test(sentence)
+  );
+
+  return progressSentence || '最近进展正在形成，新的变化会随着剧情推进明确。';
+}
+
+export function extractKeyClues(text: string): string[] {
+  const structuredState = extractStoryState(text);
+  if (structuredState.keyClues.length > 0) {
+    return structuredState.keyClues;
+  }
+
+  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
+  const clues: string[] = [];
+  const cluePatterns = [
+    /线索[：:]\s*([^\n。！？]+)/g,
+    /发现了([^\n。！？]+)/g,
+    /得知了([^\n。！？]+)/g,
+    /原来([^\n。！？]+)/g,
+  ];
+
+  cluePatterns.forEach((pattern) => {
+    let match;
+    while ((match = pattern.exec(storyPart)) !== null) {
+      const clue = match[1]?.trim();
+      if (clue && !clues.includes(clue)) {
+        clues.push(clue);
+      }
+    }
+  });
+
+  return clues.slice(0, 3);
+}
+
 export function shouldUpdateStoryArc(nextArc: string, currentArc: string): boolean {
   if (!nextArc.trim()) return false;
   if (!currentArc.trim()) return true;
@@ -232,6 +288,24 @@ export function shouldUpdateCurrentObjective(nextObjective: string, currentObjec
   if (nextObjective.length < 6) return false;
   if (currentObjective.includes(nextObjective)) return false;
   return true;
+}
+
+export function shouldUpdateRecentProgress(nextProgress: string, currentProgress: string): boolean {
+  if (!nextProgress.trim()) return false;
+  if (!currentProgress.trim()) return true;
+  if (nextProgress === currentProgress) return false;
+  if (nextProgress.includes('最近进展正在形成')) return false;
+  return nextProgress.length >= 8;
+}
+
+export function mergeKeyClues(currentClues: string[], nextClues: string[]): string[] {
+  const merged = [...currentClues];
+  nextClues.forEach((clue) => {
+    if (clue && !merged.includes(clue)) {
+      merged.push(clue);
+    }
+  });
+  return merged.slice(-5);
 }
 
 export function shouldAdvanceRealm(currentRealm: CultivationRealm, nextRealm: CultivationRealm | null): nextRealm is CultivationRealm {
