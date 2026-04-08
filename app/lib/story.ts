@@ -93,6 +93,26 @@ export function checkRequiresInput(text: string): boolean {
   return text.includes('【自由输入】') || text.includes('请描述你的行动');
 }
 
+export function stripStoryStateBlock(text: string): string {
+  return text.replace(/\n*【剧情状态】[\s\S]*$/,'').trim();
+}
+
+export function extractStoryState(text: string): { mainStoryArc: string; currentObjective: string } {
+  const match = text.match(/【剧情状态】([\s\S]*)$/);
+  if (!match) {
+    return { mainStoryArc: '', currentObjective: '' };
+  }
+
+  const stateBlock = match[1];
+  const arcMatch = stateBlock.match(/主线脉络:\s*([^\n]+)/);
+  const objectiveMatch = stateBlock.match(/当前目标:\s*([^\n]+)/);
+
+  return {
+    mainStoryArc: arcMatch?.[1]?.trim() || '',
+    currentObjective: objectiveMatch?.[1]?.trim() || '',
+  };
+}
+
 export function detectRealmUpgrade(text: string): CultivationRealm | null {
   const realmOrder: CultivationRealm[] = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '炼虚期', '合体期', '大乘期', '渡劫期'];
   
@@ -117,7 +137,12 @@ export function detectRealmUpgrade(text: string): CultivationRealm | null {
 }
 
 export function extractMainStoryArc(text: string): string {
-  const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
+  const structuredState = extractStoryState(text);
+  if (structuredState.mainStoryArc) {
+    return structuredState.mainStoryArc;
+  }
+
+  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
   const patterns = [
     /主线(?:任务|目标)[：:]\s*([^\n。！？]+)/,
     /你此行是为了([^\n。！？]+)/,
@@ -147,7 +172,12 @@ export function extractMainStoryArc(text: string): string {
 }
 
 export function extractCurrentObjective(text: string): string {
-  const storyPart = text.split('【选项】')[0]?.trim() || text.trim();
+  const structuredState = extractStoryState(text);
+  if (structuredState.currentObjective) {
+    return structuredState.currentObjective;
+  }
+
+  const storyPart = stripStoryStateBlock(text).split('【选项】')[0]?.trim() || text.trim();
   const patterns = [
     /当前(?:任务|目标)[：:]\s*([^\n。！？]+)/,
     /你的目标是([^\n。！？]+)/,
