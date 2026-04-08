@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { fetchAvailableModels, normalizeApiBaseUrl } from '@/app/lib/apiConfig';
+import { fetchAvailableModels } from '@/app/lib/apiConfig';
 
 export interface ApiSettings {
   endpoint: string;
@@ -47,7 +47,7 @@ export const useSettingsStore = create<SettingsStore>()(
         api: {
           ...state.api,
           ...updates,
-          endpoint: updates.endpoint !== undefined ? normalizeApiBaseUrl(updates.endpoint) : state.api.endpoint,
+          endpoint: updates.endpoint !== undefined ? updates.endpoint.trim() : state.api.endpoint,
           apiKey: updates.apiKey !== undefined ? updates.apiKey.trim() : state.api.apiKey,
         },
         isValidated: false,

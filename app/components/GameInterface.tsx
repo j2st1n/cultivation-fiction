@@ -235,19 +235,21 @@ function ScrollJumpButton({
   themeClass,
   children,
   disabled,
+  small,
 }: {
   title: string;
   onClick: () => void;
   themeClass: string;
   children: React.ReactNode;
   disabled?: boolean;
+  small?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-sm transition-all sm:h-10 sm:w-10 ${themeClass}`}
+      className={`inline-flex items-center justify-center rounded-full border shadow-lg backdrop-blur-sm transition-all ${small ? 'h-10 w-10 sm:h-9 sm:w-9' : 'h-11 w-11 sm:h-10 sm:w-10'} ${themeClass}`}
       title={title}
       aria-label={title}
     >
@@ -367,9 +369,12 @@ function GameScreen() {
   const streamedResponseRef = useRef('');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showBackToRecent, setShowBackToRecent] = useState(false);
+  const [showScrollControlsOverlay, setShowScrollControlsOverlay] = useState(false);
   const [scrollButtonOffset, setScrollButtonOffset] = useState({ x: 0, y: 0 });
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
+  const latestAssistantMessageRef = useRef<HTMLDivElement | null>(null);
   const scrollControlsRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -379,6 +384,7 @@ function GameScreen() {
     originY: 0,
     moved: false,
   });
+  const scrollControlsHideTimerRef = useRef<number | null>(null);
 
   const isInitialized = player.name && api.endpoint && isValidated;
 
@@ -450,14 +456,38 @@ function GameScreen() {
   }, [startGame, isInitialized, player.name, messages.length, isGenerating]);
 
   useEffect(() => {
+    const scheduleScrollControlsHide = () => {
+      if (scrollControlsHideTimerRef.current) {
+        window.clearTimeout(scrollControlsHideTimerRef.current);
+      }
+
+      scrollControlsHideTimerRef.current = window.setTimeout(() => {
+        setShowScrollControlsOverlay(false);
+      }, 1600);
+    };
+
     const updateScrollState = () => {
       const scrollTop = window.scrollY;
       const viewportHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const distanceFromBottom = documentHeight - (scrollTop + viewportHeight);
+      const controlsRelevant = scrollTop > 420 || distanceFromBottom > 260;
 
-      setShowScrollButtons(scrollTop > 240);
+      setShowScrollButtons(controlsRelevant);
+      setShowBackToRecent(scrollTop > 900);
       setIsNearBottom(distanceFromBottom < 180);
+
+      if (!controlsRelevant || distanceFromBottom < 120) {
+        setShowScrollControlsOverlay(false);
+        if (scrollControlsHideTimerRef.current) {
+          window.clearTimeout(scrollControlsHideTimerRef.current);
+          scrollControlsHideTimerRef.current = null;
+        }
+        return;
+      }
+
+      setShowScrollControlsOverlay(true);
+      scheduleScrollControlsHide();
     };
 
     updateScrollState();
@@ -467,6 +497,9 @@ function GameScreen() {
     return () => {
       window.removeEventListener('scroll', updateScrollState);
       window.removeEventListener('resize', updateScrollState);
+      if (scrollControlsHideTimerRef.current) {
+        window.clearTimeout(scrollControlsHideTimerRef.current);
+      }
     };
   }, []);
 
@@ -476,8 +509,8 @@ function GameScreen() {
     }
   }, [messages, currentText, choices, isNearBottom]);
 
-  const scrollToTop = () => {
-    topAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToRecent = () => {
+    latestAssistantMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const scrollToBottom = () => {
@@ -592,6 +625,7 @@ function GameScreen() {
       : scrollButtonOffset;
 
     if (dragStateRef.current.moved) {
+      setShowScrollControlsOverlay(true);
       setScrollButtonOffset(nextOffset);
       persistScrollButtonOffset(nextOffset);
     }
@@ -837,6 +871,7 @@ function GameScreen() {
           {messages.map((msg) => (
             <div 
               key={msg.id}
+              ref={msg.role === 'assistant' ? latestAssistantMessageRef : undefined}
               className={`rounded-xl whitespace-pre-wrap px-4 py-4 text-[15px] leading-7 sm:rounded-lg sm:text-base sm:leading-8 ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-4 sm:ml-8 italic`}`}
             >
               {msg.role === 'assistant' ? (
@@ -922,16 +957,18 @@ function GameScreen() {
       {showScrollButtons && (
         <div
           ref={scrollControlsRef}
-          className="fixed bottom-36 right-3 z-30 flex touch-none flex-col gap-1.5 sm:bottom-6 sm:right-6 sm:gap-2"
+          className={`fixed bottom-36 right-3 z-30 flex touch-none flex-col gap-1.5 transition-all duration-300 sm:bottom-6 sm:right-6 sm:gap-2 ${showScrollControlsOverlay ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
           style={{ transform: `translate(${scrollButtonOffset.x}px, ${scrollButtonOffset.y}px)` }}
           onPointerDown={handleScrollControlsPointerDown}
           onPointerMove={handleScrollControlsPointerMove}
           onPointerUp={handleScrollControlsPointerEnd}
           onPointerCancel={handleScrollControlsPointerEnd}
         >
-          <ScrollJumpButton title="回到顶部" onClick={scrollToTop} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
-            <ChevronUp size={20} strokeWidth={1.8} />
-          </ScrollJumpButton>
+          {showBackToRecent && (
+            <ScrollJumpButton title="回到上一段剧情" onClick={scrollToRecent} themeClass={theme.iconButton} disabled={dragStateRef.current.moved} small>
+              <ChevronUp size={18} strokeWidth={1.8} />
+            </ScrollJumpButton>
+          )}
           {!isNearBottom && (
             <ScrollJumpButton title="回到最下方" onClick={scrollToBottom} themeClass={theme.iconButton} disabled={dragStateRef.current.moved}>
               <ChevronDown size={20} strokeWidth={1.8} />
