@@ -6,6 +6,15 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-07
+
+### Added
+- Story memory now includes 最近进展 and 关键线索 in addition to 主线脉络 and 当前目标
+
+### Changed
+- AI context is now more compact and structured for long-session narrative consistency
+- 剧情面板 now displays richer memory layers to reduce long-conversation drift
+
 ## [0.4.1] - 2026-04-07
 
 ### Changed
