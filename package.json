@@ -1,6 +1,6 @@
 {
   "name": "interactive-fiction",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "private": true,
   "scripts": {
     "dev": "NEXT_PUBLIC_DEV_BUILD_ID=$(git rev-parse --short HEAD 2>/dev/null || echo DEV) NEXT_PUBLIC_DEV_DIRTY=$(if [ -n \"$(git status --short 2>/dev/null)\" ]; then echo dirty; else echo clean; fi) next dev",

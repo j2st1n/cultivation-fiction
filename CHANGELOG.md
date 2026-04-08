@@ -6,6 +6,13 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-04-08
+
+### Changed
+- Version display is now centralized in a shared module/component instead of being hardcoded in the main UI
+- Local dev version tags now distinguish release version, code snapshot state, and frontend session refresh state more clearly
+- Narrative pacing was returned to prompt-led control by removing the hard visible-length clamp while keeping stronger pacing guidance and a lower token ceiling
+
 ## [0.5.5] - 2026-04-08
 
 ### Changed
