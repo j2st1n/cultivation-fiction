@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-04-08
+
+### Changed
+- Desktop reading arrows now derive their next anchor from the current viewport, so mouse-wheel and trackpad scrolling no longer leaves navigation in a stale state
+
 ## [0.5.3] - 2026-04-08
 
 ### Changed
