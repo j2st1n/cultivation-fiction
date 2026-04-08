@@ -7,7 +7,7 @@ import { useGameStore } from '@/app/store/gameStore';
 import { useSettingsStore } from '@/app/store/settingsStore';
 import { streamChat } from '@/app/lib/ai';
 import { validateApiConfiguration } from '@/app/lib/apiConfig';
-import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, composeLocationLabel, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractLocationState, extractMainStoryArc, extractRealmStage, extractRecentProgress, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateLocationField, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
+import { INITIAL_STORY, parseChoicesFromResponse, checkRequiresInput, buildContextMessage, composeLocationLabel, detectRealmUpgrade, extractCurrentLocation, extractCurrentObjective, extractKeyClues, extractLocationState, extractMainStoryArc, extractRealmStage, extractRecentProgress, getCoarseLocationLabel, mergeKeyClues, shouldAdvanceRealm, shouldUpdateCurrentLocation, shouldUpdateCurrentObjective, shouldUpdateLocationField, shouldUpdateRealmStage, shouldUpdateRecentProgress, shouldUpdateStoryArc, stripInteractiveBlocks, stripStoryStateBlock, stripThinkBlocks } from '@/app/lib/story';
 import type { CultivationRealm, Message } from '@/app/types/game';
 import type { ReadingTheme } from '@/app/store/settingsStore';
 
@@ -23,7 +23,7 @@ const NEUTRAL_GIVEN_SUFFIXES = ['川', '舟', '尘', '宁', '秋', '澜', '野',
 const GITHUB_URL = 'https://github.com/j2st1n/cultivation-fiction';
 const BLOG_URL = 'https://bins.blog';
 const BLOG_ICON_URL = '/bins-blog-icon.png';
-const APP_VERSION = '0.5.1';
+const APP_VERSION = '0.5.2';
 const SCROLL_BUTTON_POSITION_STORAGE_KEY = 'scroll-button-position';
 
 const THEME_STYLES: Record<ReadingTheme, {
@@ -389,8 +389,12 @@ function GameScreen() {
   
   const { api, isValidated, readingTheme } = useSettingsStore();
   const theme = THEME_STYLES[readingTheme];
-  const displayRealm = player.realmStage ? `${player.realm}${player.realmStage}` : player.realm;
+  const normalizedRealmStage = player.realmStage && player.realmStage.startsWith(player.realm)
+    ? player.realmStage.slice(player.realm.length).trim()
+    : player.realmStage;
+  const displayRealm = normalizedRealmStage ? `${player.realm}${normalizedRealmStage}` : player.realm;
   const displayLocation = composeLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
+  const coarseLocation = getCoarseLocationLabel(world.currentRegion, world.currentArea, world.currentLocation) || world.currentLocation;
   const [currentText, setCurrentText] = useState('');
   const [choices, setChoices] = useState<string[]>([]);
   const [requiresInput, setRequiresInput] = useState(false);
@@ -408,8 +412,8 @@ function GameScreen() {
   const [scrollButtonOffset, setScrollButtonOffset] = useState({ x: 0, y: 0 });
   const topAnchorRef = useRef<HTMLDivElement | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
-  const latestAssistantMessageRef = useRef<HTMLDivElement | null>(null);
-  const latestUserMessageRef = useRef<HTMLDivElement | null>(null);
+  const messageAnchorRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [currentAnchorIndex, setCurrentAnchorIndex] = useState(-1);
   const scrollControlsRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef({
     pointerId: -1,
@@ -550,12 +554,28 @@ function GameScreen() {
     }
   }, [messages, currentText, choices, isNearBottom]);
 
-  const scrollToLatestAction = () => {
-    latestUserMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const navigableMessageIds = messages
+    .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+    .map((msg) => msg.id);
+
+  const scrollToAnchorByIndex = (targetIndex: number) => {
+    const clampedIndex = Math.max(0, Math.min(targetIndex, navigableMessageIds.length - 1));
+    const targetId = navigableMessageIds[clampedIndex];
+    if (!targetId) return;
+
+    messageAnchorRefs.current[targetId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setCurrentAnchorIndex(clampedIndex);
+  };
+
+  const scrollToPreviousAnchor = () => {
+    if (navigableMessageIds.length === 0) return;
+    const nextIndex = currentAnchorIndex <= 0 ? navigableMessageIds.length - 2 : currentAnchorIndex - 1;
+    scrollToAnchorByIndex(nextIndex);
   };
 
   const scrollToBottom = () => {
     bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setCurrentAnchorIndex(navigableMessageIds.length - 1);
   };
 
   const clampScrollButtonOffset = useCallback((nextX: number, nextY: number) => {
@@ -895,7 +915,7 @@ function GameScreen() {
         <WorldPanel 
           onClose={() => setShowWorldPanel(false)}
           player={{ ...player, displayRealm }}
-          world={{ ...world, displayLocation }}
+          world={{ ...world, displayLocation: coarseLocation }}
         />
       )}
 
@@ -911,7 +931,9 @@ function GameScreen() {
           {messages.map((msg) => (
             <div 
               key={msg.id}
-              ref={msg.role === 'assistant' ? latestAssistantMessageRef : msg.role === 'user' ? latestUserMessageRef : undefined}
+              ref={(node) => {
+                messageAnchorRefs.current[msg.id] = node;
+              }}
               className={`rounded-xl whitespace-pre-wrap px-4 py-4 text-[15px] leading-7 sm:rounded-lg sm:text-base sm:leading-8 ${msg.role === 'assistant' ? theme.assistantCard : `${theme.userCard} ml-4 sm:ml-8 italic`}`}
             >
               {msg.role === 'assistant' ? (
@@ -1005,7 +1027,7 @@ function GameScreen() {
           onPointerCancel={handleScrollControlsPointerEnd}
         >
           {showBackToRecent && (
-            <ScrollJumpButton title="回到上一条操作" onClick={scrollToLatestAction} themeClass={theme.iconButton} disabled={dragStateRef.current.moved} small>
+            <ScrollJumpButton title="回到上一段对话" onClick={scrollToPreviousAnchor} themeClass={theme.iconButton} disabled={dragStateRef.current.moved} small>
               <ChevronUp size={18} strokeWidth={1.8} />
             </ScrollJumpButton>
           )}
@@ -1058,12 +1080,15 @@ function WorldPanel({
   const currentRealm = REALMS.find(r => r.name === player.realm);
   const realmIndex = REALMS.findIndex(r => r.name === player.realm);
   const displayRealm = player.displayRealm || player.realm;
+  const normalizedRealmStage = player.realmStage && player.realmStage.startsWith(player.realm)
+    ? player.realmStage.slice(player.realm.length).trim()
+    : player.realmStage;
   
   return (
     <div className={`fixed inset-0 flex items-center justify-center z-50 ${theme.modal}`}>
       <div className={`rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto ${theme.panel}`}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className={`text-xl font-bold ${theme.panelText}`}>世界观与进度</h2>
+          <h2 className={`text-xl font-bold ${theme.panelText}`}>世界观</h2>
           <button onClick={onClose} className={`${theme.panelSubtle} hover:opacity-80`}>✕</button>
         </div>
 
@@ -1087,10 +1112,6 @@ function WorldPanel({
               <span className={theme.panelText}>{world.displayLocation || world.currentLocation}</span>
             </div>
             <div className="flex justify-between">
-              <span className={theme.panelSubtle}>最近进展</span>
-              <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.recentProgress || '等待新的推进'}</span>
-            </div>
-            <div className="flex justify-between">
               <span className={theme.panelSubtle}>已知地点</span>
               <span className={`max-w-[12rem] text-right ${theme.panelText}`}>{world.visitedLocations.join('、') || world.displayLocation || world.currentLocation}</span>
             </div>
@@ -1111,7 +1132,7 @@ function WorldPanel({
                       : `${theme.userCard}`
                 }`}
               >
-                <div className="font-medium">{realm.name}{idx === realmIndex && player.realmStage ? ` · ${player.realmStage}` : ''}</div>
+                <div className="font-medium">{realm.name}{idx === realmIndex && normalizedRealmStage ? ` · ${normalizedRealmStage}` : ''}</div>
                 <div className={`text-xs ${theme.panelSubtle}`}>{realm.desc}</div>
               </div>
             ))}

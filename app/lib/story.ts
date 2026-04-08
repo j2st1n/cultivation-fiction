@@ -150,6 +150,10 @@ export function composeLocationLabel(region?: string, area?: string, location?: 
     .trim();
 }
 
+export function getCoarseLocationLabel(region?: string, area?: string, location?: string): string {
+  return region || area || location || '';
+}
+
 export function extractLocationState(text: string): { currentRegion: string; currentArea: string; currentLocation: string } {
   const structuredState = extractStoryState(text);
   const state = {
