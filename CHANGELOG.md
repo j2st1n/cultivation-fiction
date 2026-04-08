@@ -6,6 +6,11 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-04-08
+
+### Changed
+- Desktop reading arrows now step from the live viewport anchor without relying on stale internal direction state
+
 ## [0.5.4] - 2026-04-08
 
 ### Changed
