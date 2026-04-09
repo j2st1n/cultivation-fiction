@@ -139,7 +139,7 @@ npm run preview
 
 项目采用轻量语义化版本管理。
 
-当前版本：`0.5.1`
+当前版本：`0.5.6`
 
 更新记录见：[CHANGELOG.md](./CHANGELOG.md)
 
