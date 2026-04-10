@@ -6,6 +6,13 @@ The format is inspired by Keep a Changelog and the project is moving toward sema
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-04-09
+
+### Changed
+- Local dev version tags were simplified to show release version plus fixed timestamp and dirty state
+- Narrative pacing defaults were loosened again so regular turns can breathe more while remaining prompt-led
+- Added a concrete execution plan for the shared-engine and Telegram adaptation work without destabilizing the current Web release line
+
 ## [0.5.6] - 2026-04-08
 
 ### Changed
