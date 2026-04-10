@@ -1,7 +1,7 @@
 import packageJson from '@/package.json';
 
 export const APP_VERSION = packageJson.version;
-const DEV_BUILD_ID = process.env.NEXT_PUBLIC_DEV_BUILD_ID?.trim() || 'DEV';
+const DEV_TIMESTAMP = process.env.NEXT_PUBLIC_DEV_TIMESTAMP?.trim() || 'DEV';
 const DEV_DIRTY_STATE = process.env.NEXT_PUBLIC_DEV_DIRTY?.trim() || 'clean';
 
 function buildLocalDevMarker(): string {
@@ -10,7 +10,7 @@ function buildLocalDevMarker(): string {
     return explicitMarker;
   }
 
-  return DEV_DIRTY_STATE === 'dirty' ? `${DEV_BUILD_ID}+dirty` : DEV_BUILD_ID;
+  return DEV_DIRTY_STATE === 'dirty' ? `${DEV_TIMESTAMP}-dirty` : DEV_TIMESTAMP;
 }
 
 export function getDisplayVersion(): string {

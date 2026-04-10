@@ -32,7 +32,7 @@ const DEFAULT_API: ApiSettings = {
   apiKey: '',
   model: '',
   temperature: 0.8,
-  maxTokens: 900,
+  maxTokens: 1200,
 };
 
 export const useSettingsStore = create<SettingsStore>()(
